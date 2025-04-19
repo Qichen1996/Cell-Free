@@ -1,0 +1,31 @@
+2025-04-16 22:49:26,750 INFO    MainThread:24455 [wandb_setup.py:_flush():67] Current SDK version is 0.19.9
+2025-04-16 22:49:26,750 INFO    MainThread:24455 [wandb_setup.py:_flush():67] Configure stats pid to 24455
+2025-04-16 22:49:26,750 INFO    MainThread:24455 [wandb_setup.py:_flush():67] Loading settings from /home/jovyan/.config/wandb/settings
+2025-04-16 22:49:26,751 INFO    MainThread:24455 [wandb_setup.py:_flush():67] Loading settings from /home/jovyan/Cell-Free/wandb/settings
+2025-04-16 22:49:26,751 INFO    MainThread:24455 [wandb_setup.py:_flush():67] Loading settings from environment variables
+2025-04-16 22:49:26,751 INFO    MainThread:24455 [wandb_init.py:setup_run_log_directory():662] Logging user logs to /home/jovyan/Cell-Free/results/MultiCellNetwork/B/mappo/check/wandb/run-20250416_224926-5jkubgjd/logs/debug.log
+2025-04-16 22:49:26,751 INFO    MainThread:24455 [wandb_init.py:setup_run_log_directory():663] Logging internal logs to /home/jovyan/Cell-Free/results/MultiCellNetwork/B/mappo/check/wandb/run-20250416_224926-5jkubgjd/logs/debug-internal.log
+2025-04-16 22:49:26,751 INFO    MainThread:24455 [wandb_init.py:init():781] calling init triggers
+2025-04-16 22:49:26,751 INFO    MainThread:24455 [wandb_init.py:init():786] wandb.init called with sweep_config: {}
+config: {'algorithm_name': 'mappo', 'group_name': None, 'log_level': 'NOTICE', 'experiment_name': 'check', 'seed': 1, 'cuda': True, 'cuda_deterministic': True, 'n_training_threads': 24, 'n_rollout_threads': 42, 'n_eval_rollout_threads': 1, 'n_render_rollout_threads': 1, 'num_env_steps': 3780000, 'user_name': 'qichenw', 'use_wandb': True, 'env_name': 'MultiCellNetwork', 'use_obs_instead_of_state': False, 'episode_length': 600, 'save_interval': 1, 'log_interval': 1, 'sim_log_path': 'logs/B_mappo_check.log', 'use_eval': False, 'eval_interval': 5, 'eval_episodes': 1, 'save_gifs': False, 'use_render': False, 'use_dash': False, 'render_episodes': 5, 'ifi': 0.1, 'model_dir': None, 'run_version': '', 'model_version': '', 'use_recurrent_policy': False, 'use_naive_recurrent_policy': False, 'share_policy': True, 'use_centralized_V': True, 'stacked_frames': 1, 'use_stacked_frames': False, 'hidden_size': 64, 'layer_N': 1, 'use_ReLU': True, 'use_popart': False, 'use_valuenorm': True, 'use_feature_normalization': True, 'use_orthogonal': True, 'gain': 0.01, 'recurrent_N': 1, 'data_chunk_length': 10, 'lr': 0.0005, 'critic_lr': 0.0005, 'opti_eps': 1e-05, 'weight_decay': 0, 'ppo_epoch': 10, 'use_clipped_value_loss': True, 'clip_param': 0.2, 'num_mini_batch': 32, 'entropy_coef': 0.01, 'value_loss_coef': 1.0, 'use_max_grad_norm': True, 'max_grad_norm': 10.0, 'use_gae': True, 'gamma': 0.99, 'gae_lambda': 0.95, 'use_proper_time_limits': False, 'use_huber_loss': True, 'use_value_active_masks': False, 'use_policy_active_masks': False, 'huber_delta': 10.0, 'use_linear_lr_decay': False, 'episode_secs': 604800, 'avg_traffic_density': 37.872816716557175, 'traffic_density_std': 28.593205426658308, 'accelerate': 1200, 'w_qos': 15.0, 'w_xqos': 0.005, '_wandb': {}}
+2025-04-16 22:49:26,751 INFO    MainThread:24455 [wandb_init.py:init():809] starting backend
+2025-04-16 22:49:26,751 INFO    MainThread:24455 [wandb_init.py:init():813] sending inform_init request
+2025-04-16 22:49:26,754 INFO    MainThread:24455 [backend.py:_multiprocessing_setup():101] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2025-04-16 22:49:26,754 INFO    MainThread:24455 [wandb_init.py:init():823] backend started and connected
+2025-04-16 22:49:26,755 INFO    MainThread:24455 [wandb_init.py:init():915] updated telemetry
+2025-04-16 22:49:26,758 INFO    MainThread:24455 [wandb_init.py:init():939] communicating run to backend with 90.0 second timeout
+2025-04-16 22:49:27,292 INFO    MainThread:24455 [wandb_init.py:init():1014] starting run threads in backend
+2025-04-16 22:49:27,435 INFO    MainThread:24455 [wandb_run.py:_console_start():2454] atexit reg
+2025-04-16 22:49:27,435 INFO    MainThread:24455 [wandb_run.py:_redirect():2306] redirect: wrap_raw
+2025-04-16 22:49:27,435 INFO    MainThread:24455 [wandb_run.py:_redirect():2371] Wrapping output streams.
+2025-04-16 22:49:27,435 INFO    MainThread:24455 [wandb_run.py:_redirect():2394] Redirects installed.
+2025-04-16 22:49:27,436 INFO    MainThread:24455 [wandb_init.py:init():1056] run started, returning control to user process
+2025-04-16 22:49:29,099 INFO    MainThread:24455 [wandb_watch.py:_watch():71] Watching
+2025-04-16 22:49:29,099 INFO    MainThread:24455 [wandb_watch.py:_watch():71] Watching
+2025-04-17 01:47:35,032 INFO    MainThread:24455 [wandb_run.py:_finish():2189] finishing run qichenw/MultiCellNetwork/5jkubgjd
+2025-04-17 01:47:35,033 INFO    MainThread:24455 [wandb_run.py:_atexit_cleanup():2419] got exitcode: 0
+2025-04-17 01:47:35,033 INFO    MainThread:24455 [wandb_run.py:_restore():2401] restore
+2025-04-17 01:47:35,033 INFO    MainThread:24455 [wandb_run.py:_restore():2407] restore done
+2025-04-17 01:47:36,784 INFO    MainThread:24455 [wandb_run.py:_footer_history_summary_info():4064] rendering history
+2025-04-17 01:47:36,785 INFO    MainThread:24455 [wandb_run.py:_footer_history_summary_info():4096] rendering summary
+2025-04-17 01:47:36,785 INFO    MainThread:24455 [wandb_run.py:_footer_sync_info():4025] logging synced files

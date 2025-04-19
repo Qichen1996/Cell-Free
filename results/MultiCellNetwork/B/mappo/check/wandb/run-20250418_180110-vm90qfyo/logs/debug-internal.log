@@ -1,0 +1,17 @@
+{"time":"2025-04-18T18:01:10.289520364+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.9","symlink path":"/home/jovyan/Cell-Free/results/MultiCellNetwork/B/mappo/check/wandb/run-20250418_180110-vm90qfyo/logs/debug-core.log"}
+{"time":"2025-04-18T18:01:10.571763458+02:00","level":"INFO","msg":"created new stream","id":"vm90qfyo"}
+{"time":"2025-04-18T18:01:10.571832039+02:00","level":"INFO","msg":"stream: started","id":"vm90qfyo"}
+{"time":"2025-04-18T18:01:10.57186212+02:00","level":"INFO","msg":"handler: started","stream_id":"vm90qfyo"}
+{"time":"2025-04-18T18:01:10.571871577+02:00","level":"INFO","msg":"sender: started","stream_id":"vm90qfyo"}
+{"time":"2025-04-18T18:01:10.571912818+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"vm90qfyo"}
+{"time":"2025-04-18T18:01:11.591225369+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-04-18T21:35:06.850217244+02:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/qichenw/MultiCellNetwork/vm90qfyo/file_stream\": dial tcp 35.186.228.49:443: connect: connection timed out"}
+{"time":"2025-04-18T22:17:27.211679298+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-04-18T22:17:27.211734975+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-04-18T22:17:28.213363911+02:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading output.log","runtime_seconds":0.608721088,"progress":"175.4KB/175.4KB"}],"total_operations":1}}
+{"time":"2025-04-18T22:17:28.28646382+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-04-18T22:17:28.541163028+02:00","level":"INFO","msg":"stream: closing","id":"vm90qfyo"}
+{"time":"2025-04-18T22:17:28.541173328+02:00","level":"INFO","msg":"handler: closed","stream_id":"vm90qfyo"}
+{"time":"2025-04-18T22:17:28.54117946+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"vm90qfyo"}
+{"time":"2025-04-18T22:17:28.541185307+02:00","level":"INFO","msg":"sender: closed","stream_id":"vm90qfyo"}
+{"time":"2025-04-18T22:17:28.54123285+02:00","level":"INFO","msg":"stream: closed","id":"vm90qfyo"}
