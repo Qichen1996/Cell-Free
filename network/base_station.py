@@ -67,7 +67,7 @@ class BaseStation:
     other_obs_dim = box_env_ndims(other_obs_space)
     total_obs_dim = box_env_ndims(total_obs_space)
     
-    action_dims = (num_ant_switch_opts, num_sleep_modes, num_conn_modes, cluster_size_opts)
+    action_dims = (num_ant_switch_opts, num_sleep_modes, num_conn_modes)
     # action_dims = (num_ant_switch_opts, num_sleep_modes, cluster_size_opts)
 
     def __init__(

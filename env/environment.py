@@ -147,7 +147,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         pc_kw = pc * 1e-3
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + self.w_xqos * n_done * (1 - q_del)) / n
-        reward = self.w_qos * r_qos - pc_kw * 0.5
+        reward = self.w_qos * r_qos - pc_kw * 0.4
         bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
         se_list = [ue.SE for ue in self.net.ues.values()]
         avg_se = np.mean(se_list) if se_list else 0
@@ -157,7 +157,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         r_info = dict(
             drop_ratio=q_drop,
             ue_drop_ratio=n_drop / n,
-            cluster_size=self.net.cluster_size,
+            # cluster_size=self.net.cluster_size,
             avg_se=avg_se,
             delay_ratio=q_del,
             qos_reward=r_qos,
@@ -210,7 +210,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         self.net.reset_stats()
         
         if actions is not None:
-            self.net.set_cluster_size(int(round(np.mean([action[-1] - 1 for action in actions]))))
+            # self.net.set_cluster_size(int(round(np.mean([action[-1] - 1 for action in actions]))))
             for i in range(self.num_agents):
                 self.net.set_action(i, actions[i])
         for i in range(substeps):

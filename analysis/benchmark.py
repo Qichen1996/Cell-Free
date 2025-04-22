@@ -52,7 +52,7 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'mappo': 'Dynamic', 'mappo_max2': 'SM2', 'fixed_4': 'Fixed-4', 'fixed_6': 'Fixed-6', 'simple1_no_offload=True': 'Auto-SM1', 'simple1_64': 'Auto-SM1-64', 'ippo': 'IPPO', 'dqn': 'DQN'})
+        df = df.rename({'mappo_6': '6', 'mappo_95%': '95%', 'fixed_4': 'Fixed-4', 'fixed_6': 'Fixed-6', 'simple1_no_offload=True': 'Auto-SM1', 'simple1_64': 'Auto-SM1-64', 'ippo': 'IPPO', 'dqn': 'DQN'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
     elif group == 'antenna':
@@ -92,7 +92,7 @@ def refactor(df):
     return df
 
 if group in ['baselines', 'baselines-no-offload']:
-    policies = 'Dynamic'.split()
+    policies = '95% 6'.split()
 elif group == 'antenna':
     policies = 'Ant10 Ant16'.split()
 elif group == 'wqos':
@@ -114,7 +114,7 @@ name_maps = {
     'pc_kw': 'power consumption (kW)',
     'drop_ratio': 'drop ratio',
     'reward': 'reward',
-    'cluster_size': 'cluster_size',
+    # 'cluster_size': 'cluster_size',
     'se': 'avg_se',
     'qos_reward': 'qos',
     "idle_ues": 'idle',
@@ -136,8 +136,8 @@ vars_df = df.loc[policies, list(name_maps)].rename(columns=name_maps).copy()
 vars_df['energy efficiency (kb/J)'] = vars_df['data rate (Mb/s)'] / (
     vars_df['power consumption (kW)'] + 1e-6)
 # vars_df = vars_df.iloc[::win_sz]
-# vars_df = vars_df.rolling(win_sz).mean().shift(-59)[::win_sz]
-vars_df = vars_df.rolling(win_sz).mean()[win_sz::win_sz]
+vars_df = vars_df.rolling(win_sz).mean().shift(-59)[::win_sz]
+# vars_df = vars_df.rolling(win_sz).mean()[win_sz::win_sz]
 # vars_df.to_csv('filename.csv', index=True)
 vars_df['signal power (dB)'] = 10 * np.log10(vars_df.pop('signal power') + 1e-99)
 vars_df['interference (dB)'] = 10 * np.log10(vars_df.pop('interference') + 1e-99)

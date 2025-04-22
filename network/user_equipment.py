@@ -37,7 +37,6 @@ class UserEquipment:
         self._delta = None
         self._thruput = None
         self._cover_bss = set()
-        self._sorted_bss = []
         self.cluster_size = 0
         self._sinr_stats = Counter()
 
@@ -80,7 +79,17 @@ class UserEquipment:
         self._gamma = self._gains
         self._delta = np.zeros(self.net.num_bs)
         self._sorted_bss = np.argsort(self._gains)[::-1]
-        self._cover_bss.update(self.net.get_bs(i) for i in self._sorted_bss[:self.cluster_size])
+
+        # self._cover_bss.update(self.net.get_bs(i) for i in self._sorted_bss[:self.cluster_size])
+        total_gain = np.sum(gains)
+        cumulative_gain = 0
+        self._cover_bss.clear()
+        for i in self._sorted_bss:
+            cumulative_gain += self._gains[i]
+            self._cover_bss.add(self.net.get_bs(i))
+            if cumulative_gain >= 0.90 * total_gain:
+                break
+        self.cluster_size = len(self._cover_bss)
         for b in self._cover_bss:
             b.add_to_cell(self)
         return gains
@@ -217,15 +226,18 @@ class UserEquipment:
 
     def request_connection(self):
         assert len(self.bss) < self.cluster_size
-        for i in self._sorted_bss:
-            bs = self.net.get_bs(i)
-            if bs not in self.bss:
-                res = bs.respond_connection_request(self)
-                if res:
-                    self._cover_bss.add(bs)
-                    bs.add_to_cell(self)
-                    if len(self.bss) >= self.cluster_size:
-                        break
+        for b in self._cover_bss:
+            if b not in self.bss:
+                res = b.respond_connection_request(self)
+        # for i in self._sorted_bss:
+        #     bs = self.net.get_bs(i)
+        #     if bs not in self.bss:
+        #         res = bs.respond_connection_request(self)
+        #         if res:
+        #             self._cover_bss.add(bs)
+        #             bs.add_to_cell(self)
+        #             if len(self.bss) >= self.cluster_size:
+        #                 break
         return res
 
     def disconnect(self, bs=None):
