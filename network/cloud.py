@@ -1,8 +1,9 @@
 # network/cloud.py
 import numpy as np
 from collections import defaultdict
-from utils import debug, kwds_str
 from . import config
+from utils import *
+from config import *
 
 class CloudPowerModel:
     """Centralised GPP """

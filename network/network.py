@@ -198,7 +198,7 @@ class MultiCellNetwork:
             self._bs_poses = np.array([self.bss[i].pos for i in range(self.num_bs)])
         return self._bs_poses
     
-    @property
+    # @property
     # def power_consumption(self):
     #     """ Power consumption of all BSs in the network in kW. """
     #     return self._timer and self._energy_consumed / self._timer
