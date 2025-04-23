@@ -544,7 +544,6 @@ class BaseStation:
         N_used    = config.N_used
         tau_p     = config.tau_p
         tau_c     = config.tau_c
-        tau_d     = config.tau_d
         Delta_tr  = config.Delta_tr
         P_proc0   = config.P_proc0
         proc_slope= config.proc_slope
