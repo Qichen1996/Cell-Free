@@ -91,17 +91,25 @@ other_obs_keys = [f'nb{i}_{k}' for i in range(6) for k in public_obs_keys + mutu
 all_obs_keys = public_obs_keys + private_obs_keys + other_obs_keys
 
 # pc model new
-fs            = 30.72   # MHz，采样率
-Ts            = 71.4   # us，OFDM 符号周期
+fs            = 30.72e6   # Hz，采样率
+Ts            = 71.4e-6 / 14   # s，1个OFDM 符号周期
 N_DFT         = 2048
 N_used        = 1200
-tau_p         = 8
-tau_c         = 192
-tau_d         = 1
+tau_p         = 10
+tau_c         = 200
 Delta_tr      = 4         
 P_proc0       = 20.8      
 proc_slope    = 74        
 C_AP_max      = 100       # AP 最大 GOPS 能力
+
+sigmaCool      = 0.9      # cooling loss factor
+Delta_tr_cloud = 4        # slope of fronthaul power (W/W)
+P_cloud_fixed  = 50       # W, load-independent fixed power at cloud site
+P_cloud_proc0  = 20.8     # W, idle GPP power
+proc_slope_GPP = 74       # W per (C/Cmax)
+C_GPP_max      = 200      # GOPS capability of the cloud GPP
+P_olt          = 20       # W, optical line card
+
 
 
 

@@ -9,6 +9,7 @@ from traffic import TrafficModel, TrafficType
 from traffic.config import numApps, delayBudgets
 from visualize.obs import anim_rolling
 from config import *
+from .cloud import CloudPowerModel
 
 
 class MultiCellNetwork:
@@ -61,6 +62,7 @@ class MultiCellNetwork:
         self._csi_cache = {}
         self._make_traffic_model = partial(
             TrafficModel.from_scenario, area=area, sample_rate=dpi_sample_rate)
+        self.cloud = CloudPowerModel(self)
 
         if traffic_scenario in TrafficType._member_names_:
             self.traffic_model = self._make_traffic_model(traffic_scenario)
@@ -98,6 +100,7 @@ class MultiCellNetwork:
         self._arrival_buf = np.zeros((self.buffer_ws, numApps))
         self._ue_stats = np.zeros((2, 2))
         self.ue_no_bs = 0
+        self.cloud.reset()
         notice('Reset %s', repr(self))
 
     def reset_stats(self):
@@ -146,6 +149,8 @@ class MultiCellNetwork:
 
         for ue in list(self.ues.values()):
             ue.step(dt)
+
+        self.cloud.step_power(dt)
         
         self.update_timer(dt)
         
@@ -194,10 +199,20 @@ class MultiCellNetwork:
         return self._bs_poses
     
     @property
-    def power_consumption(self):
-        """ Power consumption of all BSs in the network in kW. """
-        return self._timer and self._energy_consumed / self._timer
+    # def power_consumption(self):
+    #     """ Power consumption of all BSs in the network in kW. """
+    #     return self._timer and self._energy_consumed / self._timer
     
+    @property
+    def power_consumption(self):
+        
+        # ① AP-side：Power consumption of all BSs in the network in kW.
+        P_ap_kw = self._timer and self._energy_consumed / self._timer
+
+        # ② Cloud-side：CloudPowerModel
+        P_cloud_kw = self.cloud.avg_power() / 1e3
+        return P_ap_kw + P_cloud_kw
+        
     @property
     def arrival_rates(self):
         if self._time:

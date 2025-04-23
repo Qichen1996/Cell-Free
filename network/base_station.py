@@ -550,7 +550,7 @@ class BaseStation:
         proc_slope= config.proc_slope
         C_AP_max  = config.C_AP_max
 
-        BW_ref    = 20              
+        BW_ref    = 20e6              
         SE_ref    = 6.0               
         W_r       = self.bandwidth / BW_ref
 
@@ -561,7 +561,6 @@ class BaseStation:
 
         if 'PA_fx' not in C:           
             C['PA_fx'] = eps * Ppa_max / ((1 + eps) * eta)
-            C['PA_ld'] = self.tx_power / ((1 + eps) * eta)
 
         P_st = M * (C['PA_fx'] + Pbs) + Psyn + Pfixed
         if S:
@@ -574,7 +573,7 @@ class BaseStation:
         # ---------- 3) P_proc ----------
         UE_cnt = len(self.ues)
         if UE_cnt:
-            se_avg = np.mean([np.log2(1 + ue.compute_sinr()) for ue in self.ues.values()])
+            se_avg = np.mean([ue.SE for ue in self.ues.values()])
             SE_r   = se_avg / SE_ref
         else:
             SE_r   = 0.0
@@ -583,7 +582,7 @@ class BaseStation:
         C_filter = 40 * m * fs / 1e9
         C_DFT    = 8 * m * N_DFT * np.log2(N_DFT) / (Ts * 1e9)
         C_map    = 1.3 * W_r * (SE_r ** 1.5) * UE_cnt
-        C_prec   = 8 * m * tau_d * N_used / (Ts * 1e9 * tau_c) * UE_cnt
+        C_prec   = 8 * m * (tau_c - tau_p) * N_used / (Ts * 1e9 * tau_c) * UE_cnt
         C_AP     = C_filter + C_DFT + C_map + C_prec
 
         P_proc   = P_proc0 + proc_slope * (C_AP / C_AP_max)
@@ -606,8 +605,8 @@ class BaseStation:
                 P_proc   = P_proc,
                 P_total  = P_total
             )
-        self.net.add_stat('pc', rec)       
-        debug(f'BS {self.id}: {kwds_str(**rec)}')
+            self.net.add_stat('pc', rec)       
+            debug(f'BS {self.id}: {kwds_str(**rec)}')
 
         return P_total
     
