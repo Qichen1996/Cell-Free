@@ -468,11 +468,57 @@ class BaseStation:
             self.pop_from_queue()
 
     @timeit
+    # def compute_power_consumption(
+    #     self, eta=0.25, eps=8.2e-3, Ppa_max=config.maxPAPower,
+    #     Psyn=1, Pbs=1, Pcd=1, Lbs=12.8, Tc=5000, Pfixed=config.fixedPC, C={},
+    #     sleep_deltas=config.sleepModeDeltas
+    # ):
+    #     """
+    #     Reference: 
+    #     Args:
+    #     - eta: max PA efficiency of the BS
+    #     - Ppa_max: max PA power consumption
+    #     - Psyn: sync power
+    #     - Pbs: power consumption of circuit components
+    #     - Pcd: power consumption of coding/decoding
+        
+    #     Returns:
+    #     The power consumption of the BS in Watts.
+    #     """
+    #     M = self.max_antennas
+    #     m = self.num_ant
+    #     K = self.num_ue
+    #     S = self.sleep
+    #     R = 0
+    #     if 'K3' not in C:
+    #         B = self.bandwidth / 1e9
+    #         # assume ET-PA (envelope tracking power amplifier)
+    #         C['PA-fx'] = eps * Ppa_max / ((1 + eps) * eta)
+    #         C['PA-ld'] = self.tx_power / ((1 + eps) * eta)
+    #         C['K3'] = B / (3 * Tc * Lbs)
+    #         C['MK1'] = (2 + 1/Tc) * B / Lbs
+    #         C['MK2'] = 3 * B / Lbs
+    #     Pnl = M * (C['PA-fx'] + Pbs) + Psyn + Pfixed  # no-load part of PC
+    #     Pld = 0  # load-dependent part of PC
+    #     if S:
+    #         Pnl *= sleep_deltas[S]
+    #     elif K > 0:
+    #         R = sum(ue.data_rate for ue in self.ues.values()) / 1e9
+    #         Pld = Pcd*R + C['K3']*K**3 + m * (C['PA-ld'] + C['MK1']*K + C['MK2']*K**2)
+    #     P = Pld + Pnl
+    #     if EVAL:
+    #         rec = dict(bs=self.id, M=M, m=m, K=K, R=R, S=S, Pnl=Pnl, Pld=Pld, P=P)
+    #         # self.net.add_stat('pc', rec)
+    #         debug(f'BS {self.id}: {kwds_str(**rec)}')
+    #     return P
+
     def compute_power_consumption(
-        self, eta=0.25, eps=8.2e-3, Ppa_max=config.maxPAPower,
-        Psyn=1, Pbs=1, Pcd=1, Lbs=12.8, Tc=5000, Pfixed=config.fixedPC, C={},
-        sleep_deltas=config.sleepModeDeltas
-    ):
+            self,
+            eta=0.25, eps=8.2e-3, Ppa_max=config.maxPAPower,  # ← 旧参数保留
+            Psyn=1, Pbs=1, Lbs=12.8, Tc=5000,         # Pcd..Tc 仍保留但已不再使用
+            Pfixed=config.fixedPC, C={},
+            sleep_deltas=config.sleepModeDeltas):
+        
         """
         Reference: 
         Args:
@@ -485,32 +531,87 @@ class BaseStation:
         Returns:
         The power consumption of the BS in Watts.
         """
-        M = self.max_antennas
-        m = self.num_ant
-        K = self.num_ue
-        S = self.sleep
-        R = 0
-        if 'K3' not in C:
-            B = self.bandwidth / 1e9
-            # assume ET-PA (envelope tracking power amplifier)
-            C['PA-fx'] = eps * Ppa_max / ((1 + eps) * eta)
-            C['PA-ld'] = self.tx_power / ((1 + eps) * eta)
-            C['K3'] = B / (3 * Tc * Lbs)
-            C['MK1'] = (2 + 1/Tc) * B / Lbs
-            C['MK2'] = 3 * B / Lbs
-        Pnl = M * (C['PA-fx'] + Pbs) + Psyn + Pfixed  # no-load part of PC
-        Pld = 0  # load-dependent part of PC
+        """
+        3GPP Option‑7.2 power model
+
+            P_total = P_st + P_tr + P_proc
+        """
+
+        # ---------- 0) Const ----------
+        fs        = config.fs          
+        Ts        = config.Ts          
+        N_DFT     = config.N_DFT
+        N_used    = config.N_used
+        tau_p     = config.tau_p
+        tau_c     = config.tau_c
+        tau_d     = config.tau_d
+        Delta_tr  = config.Delta_tr
+        P_proc0   = config.P_proc0
+        proc_slope= config.proc_slope
+        C_AP_max  = config.C_AP_max
+
+        BW_ref    = 20              
+        SE_ref    = 6.0               
+        W_r       = self.bandwidth / BW_ref
+
+        # ---------- 1)  P_st ----------
+        M = self.max_antennas          
+        m = self.num_ant               
+        S = self.sleep                 
+
+        if 'PA_fx' not in C:           
+            C['PA_fx'] = eps * Ppa_max / ((1 + eps) * eta)
+            C['PA_ld'] = self.tx_power / ((1 + eps) * eta)
+
+        P_st = M * (C['PA_fx'] + Pbs) + Psyn + Pfixed
         if S:
-            Pnl *= sleep_deltas[S]
-        elif K > 0:
-            R = sum(ue.data_rate for ue in self.ues.values()) / 1e9
-            Pld = Pcd*R + C['K3']*K**3 + m * (C['PA-ld'] + C['MK1']*K + C['MK2']*K**2)
-        P = Pld + Pnl
+            P_st *= sleep_deltas[S]    
+
+        # ---------- 2) P_tr ----------
+        #   Δ_tr ⋅ Σ_k ρ_{l,k}
+        P_tr = Delta_tr * sum(self.power_alloc.values()) if self.power_alloc else 0.0
+
+        # ---------- 3) P_proc ----------
+        UE_cnt = len(self.ues)
+        if UE_cnt:
+            se_avg = np.mean([np.log2(1 + ue.compute_sinr()) for ue in self.ues.values()])
+            SE_r   = se_avg / SE_ref
+        else:
+            SE_r   = 0.0
+
+        # GOPS 
+        C_filter = 40 * m * fs / 1e9
+        C_DFT    = 8 * m * N_DFT * np.log2(N_DFT) / (Ts * 1e9)
+        C_map    = 1.3 * W_r * (SE_r ** 1.5) * UE_cnt
+        C_prec   = 8 * m * tau_d * N_used / (Ts * 1e9 * tau_c) * UE_cnt
+        C_AP     = C_filter + C_DFT + C_map + C_prec
+
+        P_proc   = P_proc0 + proc_slope * (C_AP / C_AP_max)
+
+        P_total = P_st + P_tr + P_proc
+
+        self.P_st   = P_st
+        self.P_tr   = P_tr
+        self.P_proc = P_proc
+
         if EVAL:
-            rec = dict(bs=self.id, M=M, m=m, K=K, R=R, S=S, Pnl=Pnl, Pld=Pld, P=P)
-            # self.net.add_stat('pc', rec)
-            debug(f'BS {self.id}: {kwds_str(**rec)}')
-        return P
+            rec = dict(
+                bs       = self.id,
+                M        = M,
+                m        = m,
+                K        = len(self.ues),
+                S        = S,
+                P_st     = P_st,
+                P_tr     = P_tr,
+                P_proc   = P_proc,
+                P_total  = P_total
+            )
+        self.net.add_stat('pc', rec)       
+        debug(f'BS {self.id}: {kwds_str(**rec)}')
+
+        return P_total
+    
+
     
     def consume_energy(self, e, k):
         self._energy_consumed += e    

@@ -33,6 +33,7 @@ bufferShape = (50, 1)  # shape of the buffer used to record past observations
 bufferChunkSize = 50  # chunk size to apply average pooling
 bufferNumChunks = bufferShape[0] // bufferChunkSize
 
+
 # channel model params
 noiseSpectralDensity = dB2lin(-174 - 30 + 7)
 # thermal noise variance
@@ -88,3 +89,19 @@ private_obs_keys = ['next_sleep_mode', 'wakeup_time',
 mutual_obs_keys = ['dist', *ue_stats_keys]
 other_obs_keys = [f'nb{i}_{k}' for i in range(6) for k in public_obs_keys + mutual_obs_keys]
 all_obs_keys = public_obs_keys + private_obs_keys + other_obs_keys
+
+# pc model new
+fs            = 30.72   # MHz，采样率
+Ts            = 71.4   # us，OFDM 符号周期
+N_DFT         = 2048
+N_used        = 1200
+tau_p         = 8
+tau_c         = 192
+tau_d         = 1
+Delta_tr      = 4         
+P_proc0       = 20.8      
+proc_slope    = 74        
+C_AP_max      = 100       # AP 最大 GOPS 能力
+
+
+
