@@ -92,7 +92,7 @@ def refactor(df):
     return df
 
 if group in ['baselines', 'baselines-no-offload']:
-    policies = '95% 6'.split()
+    policies = 'mappo_w_qos=10.0'.split()
 elif group == 'antenna':
     policies = 'Ant10 Ant16'.split()
 elif group == 'wqos':

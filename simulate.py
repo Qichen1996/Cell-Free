@@ -65,7 +65,10 @@ def make_env(args, seed=None):
     env = MultiCellNetEnv(seed=seed, **{
         k: v for k, v in kwds.items() if v is not None})
     pars = inspect.signature(MultiCellNetEnv.__init__).parameters
-    [setattr(args, k, pars[k].default) for k, v in kwds.items() if v is None]
+    # [setattr(args, k, pars[k].default) for k, v in kwds.items() if v is None]
+    for k, v in kwds.items():
+        if v is None and k in pars:    # 只有 init 里真的有这个形参才设置
+            setattr(args, k, pars[k].default)
     return env
 
 def get_model_dir(args, env_args, run_dir, version=''):

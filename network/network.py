@@ -135,7 +135,7 @@ class MultiCellNetwork:
         #         self.generate_new_ues(dt)
         # else:
         #     self.generate_new_ues(dt)
-        for _ in range(8):
+        for _ in range(9):
             self.generate_new_ues(dt)
     
         self.scan_connections()

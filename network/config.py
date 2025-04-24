@@ -92,7 +92,7 @@ all_obs_keys = public_obs_keys + private_obs_keys + other_obs_keys
 
 # pc model new
 fs            = 30.72e6   # Hz，采样率
-Ts            = 71.4e-6 / 14   # s，1个OFDM 符号周期
+Ts            = 71.4e-6   # s，OFDM 符号周期
 N_DFT         = 2048
 N_used        = 1200
 tau_p         = 10
