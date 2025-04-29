@@ -47,7 +47,6 @@ class BaseStation:
         [[0, 1]] * num_sleep_modes
     )
     private_obs_space = make_box_env(
-        [[0, np.inf]] * 1 +
         [[0, 1]] * num_sleep_modes +        # next sleep mode
         [[0, max(wakeup_delays)]] +         # wakeup time
         [[0, np.inf]] * hist_stats_dim +    # history stats
@@ -257,6 +256,8 @@ class BaseStation:
 
     def switch_sleep_mode(self, mode):
         mode = min(mode, self._max_sleep)
+
+        # mode = self._max_sleep if mode > 1 else 0
         if DEBUG:
             assert mode in range(self.num_sleep_modes)
         if mode == self.sleep:
@@ -550,7 +551,8 @@ class BaseStation:
         C_AP_max  = config.C_AP_max
 
         BW_ref    = 20e6              
-        SE_ref    = 6.0               
+        SE_ref    = 6.0     
+        se_avg    = 3.3
         W_r       = self.bandwidth / BW_ref
 
         # ---------- 1)  P_st ----------
@@ -558,12 +560,14 @@ class BaseStation:
         m = self.num_ant               
         S = self.sleep                 
 
-        if 'PA_fx' not in C:           
-            C['PA_fx'] = eps * Ppa_max / ((1 + eps) * eta)
+        # if 'PA_fx' not in C:           
+        #     C['PA_fx'] = eps * Ppa_max / ((1 + eps) * eta)
 
-        P_st = M * (C['PA_fx'] + Pbs) + Psyn + Pfixed
-        if S:
-            P_st *= sleep_deltas[S]    
+        # P_st = M * (C['PA_fx'] + Pbs) + Psyn + Pfixed
+        # if S:
+        #     P_st *= sleep_deltas[S]    
+
+        P_st = m * 6.8
 
         # ---------- 2) P_tr ----------
         #   Δ_tr ⋅ Σ_k ρ_{l,k}
@@ -572,11 +576,11 @@ class BaseStation:
         # ---------- 3) P_proc ----------
         UE_cnt = len(self.ues)
         if UE_cnt:
-            se_avg = np.mean([ue.SE for ue in self.ues.values()])
+            # se_avg = np.mean([ue.SE for ue in self.ues.values()])
             SE_r   = se_avg / SE_ref
         else:
             SE_r   = 0.0
-
+        
         # GOPS 
         C_filter = 40 * m * fs / 1e9
         C_DFT    = 8 * m * N_DFT * np.log2(N_DFT) / (Ts * 1e9)
@@ -587,6 +591,8 @@ class BaseStation:
         P_proc   = P_proc0 + proc_slope * (C_AP / C_AP_max)
 
         P_total = P_st + P_tr + P_proc
+
+        P_total *= sleep_deltas[S]
 
         self.P_st   = P_st
         self.P_tr   = P_tr
@@ -693,7 +699,7 @@ class BaseStation:
         return np.concatenate([
             ### public information ###
             # [self.band_width, self.transmit_power],
-            [self.net.cluster_size],
+            # [self.net.cluster_size],
             [self.operation_pc, self.num_ant, self.responding],
             onehot_vec(self.num_sleep_modes, self.sleep),
             ### private information ###

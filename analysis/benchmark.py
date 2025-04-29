@@ -31,6 +31,10 @@ agents = [tuple(f.split('/')[1:4]) for f in files]
 df = pd.concat(df, keys=agents, names=['policy', 'scenario', 'seed'])
 # df = df.sort_index(level=0, ascending=False)[~df.index.duplicated(keep='last')]
 df0 = df = df.reset_index(level=-1).groupby(['policy', 'scenario', 'time'], sort=False).mean()
+
+print("🔍 可用的 policy：")
+print(df0.index.get_level_values(0).unique())
+
 df.head()
 
 # %%
@@ -52,9 +56,13 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'mappo_6': '6', 'mappo_95%': '95%', 'fixed_4': 'Fixed-4', 'fixed_6': 'Fixed-6', 'simple1_no_offload=True': 'Auto-SM1', 'simple1_64': 'Auto-SM1-64', 'ippo': 'IPPO', 'dqn': 'DQN'})
+        df = df.rename({'fixed_SM0,1,2,3_SE3.3_update': 'fixed_SM0,1,2,3_SE3.3'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
+    elif group == 'w':
+        df = df.rename({'mappo_w_qos=30.0': '30', 'mappo_w_qos=10.0': '10', '90%gain_SM0,1,2,3': '40'})
+    elif group == '90%':
+        df = df.rename({'90%gain_SM0,1,2,3': 'SM0,1,2,3', '90%gain_SM0': 'SM0', '90%gain_SM0,SM1': 'SM0,1', '90%gain_SM0,SM3': 'SM0,3'})
     elif group == 'antenna':
         df = df.rename({'fixed_ant10': 'Ant10', 'fixed_ant16': 'Ant16'})
     elif group == 'wqos':
@@ -92,7 +100,11 @@ def refactor(df):
     return df
 
 if group in ['baselines', 'baselines-no-offload']:
-    policies = 'mappo_w_qos=10.0'.split()
+    policies = ['fixed_SM0,1,2,3_SE3.3']
+elif group == 'w':
+    policies = ['10','30','40']
+elif group == '90%':
+    policies = ['SM0,1,2,3','SM0','SM0,3', 'SM0,1']
 elif group == 'antenna':
     policies = 'Ant10 Ant16'.split()
 elif group == 'wqos':
@@ -211,6 +223,9 @@ for scenario in vars_df.index.levels[1]:
             print(key)
             print(ser.groupby('policy').mean())
         elif key == "energy efficiency (kb/J)":
+            print(key)
+            print(ser.groupby('policy').mean())
+        elif key == "avg_se":
             print(key)
             print(ser.groupby('policy').mean())
         _df = ser.unstack(level=0).reindex(idx)

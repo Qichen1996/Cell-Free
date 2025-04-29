@@ -27,6 +27,7 @@ class CloudPowerModel:
         """
         BW_ref = 20e6
         SE_ref = 6.0
+        se_avg = 3.3
         W_r    = self.net.bss[0].bandwidth / BW_ref  
 
         # Σ_l … Σ_AP
@@ -38,10 +39,7 @@ class CloudPowerModel:
         for bs in self.net.bss.values():
             UE_cnt = len(bs.ues)
             if UE_cnt:
-                # sinrs = [ue.compute_sinr() for ue in bs.ues.values()]
-                # se_avg = np.mean(np.log2(1+np.array(sinrs)))
-                # SE_r = se_avg / SE_ref
-                se_avg = np.mean([ue.SE for ue in bs.ues.values()])
+                # se_avg = np.mean([ue.SE for ue in bs.ues.values()])
                 SE_r   = se_avg / SE_ref
             else:
                 SE_r = 0.0
@@ -53,7 +51,7 @@ class CloudPowerModel:
             p_fh_sum += config.Delta_tr_cloud * sum(bs.power_alloc.values()) \
                         if bs.power_alloc else 0.0
 
-        C_GPP = Cmod_sum + Ccod_sum + Cnet_sum
+        C_GPP = Cmod_sum
         return C_GPP, p_fh_sum
 
     # -------------------------------------------------------

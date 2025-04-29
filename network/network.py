@@ -144,6 +144,8 @@ class MultiCellNetwork:
 
         self.compute_delta()
 
+        # print(f'num ue: {len(self.ues)}')
+
         for bs in self.bss.values():
             bs.step(dt)
 
@@ -256,7 +258,7 @@ class MultiCellNetwork:
             assert ue.id not in self.ues, "UE %s already in the network" % ue.id
             # debug(f'{ue.id} added to the network')
         ue.net = self
-        # ue.cluster_size = self.cluster_size
+        ue.cluster_size = self.cluster_size
         self.ues[ue.id] = ue
         self.measure_distances_and_gains(ue)
         self._arrival_buf[self._buf_idx, ue.service] += ue.demand
