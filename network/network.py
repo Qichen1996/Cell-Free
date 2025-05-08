@@ -135,7 +135,7 @@ class MultiCellNetwork:
         #         self.generate_new_ues(dt)
         # else:
         #     self.generate_new_ues(dt)
-        for _ in range(9):
+        for _ in range(11):
             self.generate_new_ues(dt)
     
         self.scan_connections()
@@ -258,7 +258,7 @@ class MultiCellNetwork:
             assert ue.id not in self.ues, "UE %s already in the network" % ue.id
             # debug(f'{ue.id} added to the network')
         ue.net = self
-        ue.cluster_size = self.cluster_size
+        # ue.cluster_size = self.cluster_size
         self.ues[ue.id] = ue
         self.measure_distances_and_gains(ue)
         self._arrival_buf[self._buf_idx, ue.service] += ue.demand

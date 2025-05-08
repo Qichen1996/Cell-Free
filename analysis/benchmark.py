@@ -7,6 +7,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.io as pio
+import os
+
 
 plotly_template = pio.templates['plotly']
 plotly_template['layout'].update(
@@ -56,11 +58,11 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'fixed_SM0,1,2,3_SE3.3_update': 'fixed_SM0,1,2,3_SE3.3'})
+        df = df.rename({'90%0,3_10': 'SM0/3', '90%0,1_10': 'SM0/1', '90%_SM0,1,2,3_STEP10': 'Joint-SM-Ant', 'fixed_0-3_step10': 'Fixed-cluster', '90%_SM0,1,2,3_10_nopower':'90% (ASM) no power alloc','fixed': 'Always-on','90%_SM0,1,2,3_Ant8_NoTrain': 'Ant-8', '90%_SM0,1,2,3_Ant16_NoTrain': 'Ant-16'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
     elif group == 'w':
-        df = df.rename({'mappo_w_qos=30.0': '30', 'mappo_w_qos=10.0': '10', '90%gain_SM0,1,2,3': '40'})
+        df = df.rename({'mappo_w_qos=40.0': 'STEP11_SM0,3'})
     elif group == '90%':
         df = df.rename({'90%gain_SM0,1,2,3': 'SM0,1,2,3', '90%gain_SM0': 'SM0', '90%gain_SM0,SM1': 'SM0,1', '90%gain_SM0,SM3': 'SM0,3'})
     elif group == 'antenna':
@@ -100,9 +102,9 @@ def refactor(df):
     return df
 
 if group in ['baselines', 'baselines-no-offload']:
-    policies = ['fixed_SM0,1,2,3_SE3.3']
+    policies = ['Ant-16', 'Ant-8', 'SM0/1', 'SM0/3', 'Fixed-cluster', 'Always-on', 'Joint-SM-Ant']
 elif group == 'w':
-    policies = ['10','30','40']
+    policies = ['STEP11_SM0,3']
 elif group == '90%':
     policies = ['SM0,1,2,3','SM0','SM0,3', 'SM0,1']
 elif group == 'antenna':
@@ -123,7 +125,7 @@ df = refactor(df0)
 
 # %%
 name_maps = {
-    'pc_kw': 'power consumption (kW)',
+    'pc_kw': 'Power Consumption (kW)',
     'drop_ratio': 'drop ratio',
     'reward': 'reward',
     # 'cluster_size': 'cluster_size',
@@ -146,7 +148,7 @@ for i in range(25):
     name_maps[f'bs_{i}_n_ants'] = f'antennas (BS {i})'
 vars_df = df.loc[policies, list(name_maps)].rename(columns=name_maps).copy()
 vars_df['energy efficiency (kb/J)'] = vars_df['data rate (Mb/s)'] / (
-    vars_df['power consumption (kW)'] + 1e-6)
+    vars_df['Power Consumption (kW)'] + 1e-6)
 # vars_df = vars_df.iloc[::win_sz]
 vars_df = vars_df.rolling(win_sz).mean().shift(-59)[::win_sz]
 # vars_df = vars_df.rolling(win_sz).mean()[win_sz::win_sz]
@@ -184,10 +186,13 @@ for scenario in vars_df.index.levels[1]:
     }).sort_index(axis=1)
     
     for g in _df.index.levels[0]:
-        f = px.area(_df.loc[g], labels={'value': 'number of BSs', 'variable': 'sleep mode'},
+        f = px.area(_df.loc[g], labels={'value': 'number of BSs', 'variable': 'sleep mode', 'time': 'Time'},
                         color_discrete_sequence=np.array(px.colors.qualitative.Plotly)[[1, 4, 2, 0]])
         f.update_xaxes(dtick=2)
-        f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
+        output_path = f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf'
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        f.write_image(output_path, scale=2)
+        # f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
 
     re_pat = re.compile(r'antennas \((BS \d+)\)')
     cols = [k for k in _sdf.keys() if re_pat.match(k)]
@@ -216,7 +221,7 @@ for scenario in vars_df.index.levels[1]:
         if key == "drop ratio":
             print(key)
             print(ser.groupby('policy').mean())
-        elif key == "power consumption (kW)":
+        elif key == "Power Consumption (kW)":
             print(key)
             print(ser.groupby('policy').mean())
         elif key == "qos":
@@ -225,11 +230,11 @@ for scenario in vars_df.index.levels[1]:
         elif key == "energy efficiency (kb/J)":
             print(key)
             print(ser.groupby('policy').mean())
-        elif key == "avg_se":
-            print(key)
-            print(ser.groupby('policy').mean())
+        # elif key == "avg_se":
+        #     print(key)
+        #     print(ser.groupby('policy').mean())
         _df = ser.unstack(level=0).reindex(idx)
-        fig = px.line(_df, labels={'value': key}, log_y=key=='Interference')
+        fig = px.line(_df, labels={'value': key, 'time': 'Time'}, log_y=key=='Interference')
         _df.index = pd.MultiIndex.from_tuples(
             [tuple(s.split()) for s in _df.index],
             names=['day', 'time'])
@@ -238,7 +243,7 @@ for scenario in vars_df.index.levels[1]:
         key = key.replace('/', 'p')
         fig.update_xaxes(dtick=2)
         fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
-        fig1 = px.line(_df1, labels={'value': key})
+        fig1 = px.line(_df1, labels={'value': key, 'time': 'Time'})
         fig1.update_xaxes(dtick=2)
         fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
         

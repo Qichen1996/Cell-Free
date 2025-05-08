@@ -65,9 +65,11 @@ class BaseStation:
     self_obs_dim = box_env_ndims(self_obs_space)
     other_obs_dim = box_env_ndims(other_obs_space)
     total_obs_dim = box_env_ndims(total_obs_space)
-    
+
+    # action_dims = (num_ant_switch_opts, num_sleep_modes)
     action_dims = (num_ant_switch_opts, num_sleep_modes, num_conn_modes)
     # action_dims = (num_ant_switch_opts, num_sleep_modes, cluster_size_opts)
+    # action_dims = (num_sleep_modes, num_conn_modes)
 
     def __init__(
         self, id, pos, net, 
@@ -98,6 +100,7 @@ class BaseStation:
         self.sleep = 0
         self.conn_mode = 1
         self.num_ant = self.max_antennas
+        # self.num_ant = 16
         self._power_alloc = None
         self._prev_sleep = 0
         self._next_sleep = 0
@@ -580,6 +583,7 @@ class BaseStation:
             SE_r   = se_avg / SE_ref
         else:
             SE_r   = 0.0
+            
         
         # GOPS 
         C_filter = 40 * m * fs / 1e9
@@ -588,8 +592,18 @@ class BaseStation:
         C_prec   = 8 * m * (tau_c - tau_p) * N_used / (Ts * 1e9 * tau_c) * UE_cnt
         C_AP     = C_filter + C_DFT + C_map + C_prec
 
+        # if UE_cnt == 0:
+        #     C_AP   = 0
+            
+        # if S:
+        #     P_proc0 = 0
+        #     P_st *= sleep_deltas[S]
+
+        
+            
         P_proc   = P_proc0 + proc_slope * (C_AP / C_AP_max)
 
+        
         P_total = P_st + P_tr + P_proc
 
         P_total *= sleep_deltas[S]
