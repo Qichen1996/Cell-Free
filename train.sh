@@ -27,7 +27,7 @@ w_xqos=0.005
 
 log_interval=1
 
-wandb_user="keyuli207"
+wandb_user="qichenw"
 wandb_api_key="58aa2e20bdb9bc77a74e030c3af1f4249a2b4f6e"
 
 echo "algo is ${algo}, traffic scenario is ${scenario}, max seed is ${seed_max}"
