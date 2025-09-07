@@ -147,7 +147,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         pc_kw = pc * 1e-3
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + self.w_xqos * n_done * (1 - q_del)) / n
-        reward = self.w_qos * r_qos - pc_kw * 0.4
+        reward = self.w_qos * r_qos - pc_kw * 1      # 0.6
         bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
         se_list = [ue.SE for ue in self.net.ues.values()]
         avg_se = np.mean(se_list) if se_list else 0

@@ -135,7 +135,7 @@ class MultiCellNetwork:
         #         self.generate_new_ues(dt)
         # else:
         #     self.generate_new_ues(dt)
-        for _ in range(11):
+        for _ in range(10):
             self.generate_new_ues(dt)
     
         self.scan_connections()
@@ -311,13 +311,20 @@ class MultiCellNetwork:
                 gain_ratio = 0
                 collected_gain = 0
                 index = 0
-                while gain_ratio < 0.9 and index < b.num_ant - 1:
+                strong_pilot = set()
+                while gain_ratio < 0.9 and index <= min(b.num_ant - 1, self.tau_p):
+                    u = sorted_ues[index]
+                    u._delta[i] = 1
+                    strong_pilot.add(u.pilot)
                     collected_gain += sorted_gains[index]
                     gain_ratio = collected_gain / sum_gain
                     index += 1
-                b.tau_sl = index
-                for u in sorted_ues[:index]:
-                    u._delta[i] = 1
+                b.tau_sl = len(strong_pilot)
+                for u in sorted_ues[index:]:
+                    if u.pilot in strong_pilot:
+                        u._delta[i] = 1
+                    else:
+                        u._delta[i] = 0
 
     @timeit
     def scan_connections(self):

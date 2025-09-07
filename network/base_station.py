@@ -66,10 +66,10 @@ class BaseStation:
     other_obs_dim = box_env_ndims(other_obs_space)
     total_obs_dim = box_env_ndims(total_obs_space)
 
-    # action_dims = (num_ant_switch_opts, num_sleep_modes)
-    action_dims = (num_ant_switch_opts, num_sleep_modes, num_conn_modes)
+    action_dims = (num_ant_switch_opts, num_sleep_modes)
+    # action_dims = (num_ant_switch_opts, num_sleep_modes, num_conn_modes)
     # action_dims = (num_ant_switch_opts, num_sleep_modes, cluster_size_opts)
-    # action_dims = (num_sleep_modes, num_conn_modes)
+    # action_dims = (num_sleep_modes,)
 
     def __init__(
         self, id, pos, net, 
@@ -231,9 +231,9 @@ class BaseStation:
         if not TRAIN:
             # assert len(action) == len(self.action_dims)
             info(f'BS {self.id} takes action:\n{action}')
-        self.switch_antennas(int(action[0]))
-        self.switch_sleep_mode(int(action[1]))
-        self.switch_connection_mode(int(action[2]) - 1)
+        # self.switch_antennas(int(action[0]))
+        self.switch_sleep_mode(int(action[0]))
+        # self.switch_connection_mode(int(action[2]) - 1)
     
     def switch_antennas(self, opt):
         if DEBUG:

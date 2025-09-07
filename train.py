@@ -10,13 +10,6 @@ from env import MultiCellNetEnv
 from utils import *
 from env.env_wrappers import ShareSubprocVecEnv, ShareDummyVecEnv
 
-# 强制覆盖 WandB 使用的账号和密钥
-os.environ["WANDB_API_KEY"] = "58aa2e20bdb9bc77a74e030c3af1f4249a2b4f6e"
-os.environ["WANDB_ENTITY"] = "keyuli207-kth-royal-institute-of-technology"
-
-# 可选：防止 WandB 把代码全上传
-os.environ["WANDB_DISABLE_CODE"] = "true"
-
 
 if DEBUG and 'loadDebugger' in globals():
     loadDebugger()
@@ -119,10 +112,11 @@ def main(args):
 
     # logging
     if args.use_wandb:
+        wandb.login(key="e4bee9a24174f0daabc173c5384733a60c1ea981")
         wandb.init(
             config=args,
-            project="cellfree",
-            entity="keyuli207-kth-royal-institute-of-technology",
+            project=args.env_name,
+            entity=args.user_name,
             notes=socket.gethostname(),
             name=f"{args.algorithm_name}_{args.experiment_name}_seed{args.seed}",
             group=env_args.scenario,

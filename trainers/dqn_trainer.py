@@ -150,9 +150,21 @@ class DQNTrainer(BaseTrainer):
                     self.save(version=f"_eps{episodes}")
                 if episodes % self.log_interval == 0:
                     rew_df = pd.concat([pd.DataFrame(d['step_rewards']) for d in infos])
-                    rew_info = rew_df.describe().loc[['mean', 'std', 'min', 'max']].unstack()
+                    rew_info = rew_df.describe().loc[['mean']].unstack()
                     rew_info.index = ['_'.join(idx) for idx in rew_info.index]
                     self.log_train(rew_info, steps)
+                    avg_drop_ratio = np.mean([
+                        step["drop_ratio"]
+                        for info in infos
+                        for step in info["step_rewards"]
+                    ])
+                    avg_pc = np.mean([
+                        step["pc_kw"]
+                        for info in infos
+                        for step in info["step_rewards"]
+                    ])
+                    print(f'dp: {avg_drop_ratio}')
+                    print(f'pc: {avg_pc}')
 
     def take_actions(self, obs):
         return np.array([self.q_net(torch.Tensor(ob).to(self.device))

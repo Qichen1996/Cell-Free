@@ -33,10 +33,6 @@ agents = [tuple(f.split('/')[1:4]) for f in files]
 df = pd.concat(df, keys=agents, names=['policy', 'scenario', 'seed'])
 # df = df.sort_index(level=0, ascending=False)[~df.index.duplicated(keep='last')]
 df0 = df = df.reset_index(level=-1).groupby(['policy', 'scenario', 'time'], sort=False).mean()
-
-print("🔍 可用的 policy：")
-print(df0.index.get_level_values(0).unique())
-
 df.head()
 
 # %%
@@ -58,7 +54,7 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'90%0,3_10': 'SM0/3', '90%0,1_10': 'SM0/1', '90%_SM0,1,2,3_STEP10': 'Joint-SM-Ant', 'fixed_0-3_step10': 'Fixed-cluster', '90%_SM0,1,2,3_10_nopower':'90% (ASM) no power alloc','fixed': 'Always-on','90%_SM0,1,2,3_Ant8_NoTrain': 'Ant-8', '90%_SM0,1,2,3_Ant16_NoTrain': 'Ant-16'})
+        df = df.rename({'90%0,3_10': 'SM0/3', '90%0,1_10': 'SM0/1', '90%_SM0,1,2,3_STEP10': 'Joint-SM-Ant', 'fixed_0-3_step10': 'Fixed-cluster', '90%_SM0,1,2,3_10_nopower':'90% (ASM) no power alloc','fixed': 'Always-on','90%_SM0,1,2,3_Ant8_NoTrain': 'Ant-8', '90%_SM0,1,2,3_Ant16_NoTrain': 'Ant-16', 'mappo': 'MAPPO', 'simple1': 'Auto-SM1', 'dqn': 'DQN'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
     elif group == 'w':
@@ -102,7 +98,8 @@ def refactor(df):
     return df
 
 if group in ['baselines', 'baselines-no-offload']:
-    policies = ['Ant-16', 'Ant-8', 'SM0/1', 'SM0/3', 'Fixed-cluster', 'Always-on', 'Joint-SM-Ant']
+    # policies = ['Ant-16', 'Ant-8', 'SM0/1', 'SM0/3', 'Fixed-cluster', 'Always-on', 'Joint-SM-Ant']
+    policies = ['Always-on', 'Auto-SM1', 'MAPPO', 'DQN']
 elif group == 'w':
     policies = ['STEP11_SM0,3']
 elif group == '90%':
@@ -189,10 +186,10 @@ for scenario in vars_df.index.levels[1]:
         f = px.area(_df.loc[g], labels={'value': 'number of BSs', 'variable': 'sleep mode', 'time': 'Time'},
                         color_discrete_sequence=np.array(px.colors.qualitative.Plotly)[[1, 4, 2, 0]])
         f.update_xaxes(dtick=2)
-        output_path = f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf'
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        f.write_image(output_path, scale=2)
-        # f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
+        # output_path = f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf'
+        # os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        # f.write_image(output_path, scale=2)
+        f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
 
     re_pat = re.compile(r'antennas \((BS \d+)\)')
     cols = [k for k in _sdf.keys() if re_pat.match(k)]

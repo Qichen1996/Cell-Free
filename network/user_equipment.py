@@ -16,6 +16,8 @@ class UEStatus(enum.IntEnum):
 class UserEquipment:
     height: float = config.ueHeight
     signal_thresh = config.signalThreshold
+    tau_c = config.tau_c
+    tau_p = config.tau_p
     record_sinr = True
     _cache = defaultdict(dict)
 
@@ -180,7 +182,7 @@ class UserEquipment:
     @property
     def SE(self):
         sinr = self.compute_sinr()
-        return 190 / 200 * np.log2(1 + sinr)
+        return (self.tau_p - self.tau_c) / self.tau_p * np.log2(1 + sinr)
 
     @timeit
     def compute_data_rate(self):

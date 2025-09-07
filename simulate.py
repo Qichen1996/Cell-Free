@@ -77,20 +77,20 @@ def get_model_dir(args, env_args, run_dir, version=''):
         return run_dir / args.model_dir
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
-    # for d in sorted(dirs, key=os.path.getmtime, reverse=True):
-    d = sorted(dirs, key=os.path.getmtime, reverse=True)[0]
-    print(d)
-    # if env_args.no_interf ^ ('no_interf' in str(d)):
-    #     continue
-    config_path = d/'config.yaml'
-    if not config_path.exists():
-        warn("no config file in %s" % d)
-        return d
-    with open(config_path) as f:
-        cfg = yaml.safe_load(f)
-        if all(getattr(env_args, k) == cfg[k]['value']
-                for k in model_params if k in cfg):
+    for d in sorted(dirs, key=os.path.getmtime, reverse=True):
+    # d = sorted(dirs, key=os.path.getmtime, reverse=True)[0]
+        print(d)
+        # if env_args.no_interf ^ ('no_interf' in str(d)):
+        #     continue
+        config_path = d/'config.yaml'
+        if not config_path.exists():
+            warn("no config file in %s" % d)
             return d
+        with open(config_path) as f:
+            cfg = yaml.safe_load(f)
+            if all(getattr(env_args, k) == cfg[k]['value']
+                    for k in model_params if k in cfg):
+                return d
     raise FileNotFoundError("no such model directory")
 
 env = make_env(env_args, seed=args.seed)

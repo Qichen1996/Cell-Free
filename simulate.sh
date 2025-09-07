@@ -1,13 +1,13 @@
 #!/bin/sh
 acc=3000
-MODEL_BASE="/home/jovyan/LKY-TEST/Cell-Free/results/MultiCellNetwork"
-RUN_NAME="90%gain_step10"  # 你的 wandb 目录名
+
+MODEL_BASE="/root/Cell-Free/results/CellFreeNetwork"
 
 for seed in 1 2 3; do
 for S in B; do
     for w in 40; do
-        MODEL_DIR="${MODEL_BASE}/${S}/mappo/check/wandb/${RUN_NAME}/files"
-        ./simulate.py -S $S --w_qos $w --model_dir "$MODEL_DIR" --seed $seed -a $acc $@
+        MODEL_DIR="${MODEL_BASE}/${S}/mappo/check/run3/models"
+        ./simulate.py -S $S --w_qos $w --seed $seed -a $acc --use_wandb --model_dir "$MODEL_DIR" $@
         # ./simulate.py -S $S --w_qos $w --seed $seed -a $acc $@
         # ./simulate.py -S $S -A fixed --seed $seed  --model_dir "$MODEL_DIR" -a $acc $@
     done
@@ -15,8 +15,8 @@ for S in B; do
     # w=40
     # MODEL_DIR="${MODEL_BASE}/${S}/mappo/check/wandb/${RUN_NAME}/files"
     #./simulate.py -S $S --w_qos $w --seed $seed -a $acc $@
-    # ./simulate.py -S $S -A fixed --w_qos $w --seed $seed  --model_dir "$MODEL_DIR" -a $acc $@
-    # ./simulate.py -S $S -A simple1 --seed $seed -a $acc $@
+    ./simulate.py -S $S -A fixed --seed $seed -a $acc $@
+    ./simulate.py -S $S -A simple1 --seed $seed -a $acc $@
     # ./simulate.py -S $S -A simple1 --no_offload --seed $seed -a $acc $@
     # for max_s in 1; do  # max depth of sleep
     #     # MODEL_DIR="${MODEL_BASE}/${S}/mappo/check/wandb/${RUN_NAME}/files"

@@ -502,6 +502,18 @@ class MappoTrainer(BaseTrainer):
                     cm0_ratio = np.mean([d['cm0_ratio'] for d in infos]),
                     **rew_info)
                 avg_step_rew = np.mean(self.buffer.rewards)
+                avg_drop_ratio = np.mean([
+                    step["drop_ratio"]
+                    for info in infos
+                    for step in info["step_rewards"]
+                ])
+                avg_pc = np.mean([
+                    step["pc_kw"]
+                    for info in infos
+                    for step in info["step_rewards"]
+                ])
+                print(f'dp: {avg_drop_ratio}')
+                print(f'pc: {avg_pc}')
                 # assert abs(avg_step_rew - train_infos['reward_mean']) < 1e-3
                 notice('Episode %s: %s\n' % (episode, kwds_str(**train_infos)))
                 pbar.set_postfix(reward=avg_step_rew)
