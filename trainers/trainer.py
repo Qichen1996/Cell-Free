@@ -41,7 +41,6 @@ class BaseTrainer(ABC):
             os.makedirs(self.save_dir, exist_ok=True)
             os.makedirs(self.log_dir, exist_ok=True)
             self.writer = SummaryWriter(self.log_dir)
-            print(self.log_dir)
 
     @abstractmethod
     def train(self):

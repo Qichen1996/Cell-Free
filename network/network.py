@@ -30,7 +30,7 @@ class MultiCellNetwork:
     #     duplicate_box_env(bs_obs_space, config.numBS))
     net_obs_space = concat_box_envs(
         up_obs_space)
-    net_obs_space = global_obs_space
+    # net_obs_space = global_obs_space
 
 
     global_obs_dim = box_env_ndims(global_obs_space)
@@ -48,6 +48,7 @@ class MultiCellNetwork:
                  max_sleep_depth=3,
                  w_qos=16,
                  w_xqos=0.005,
+                 w_pc=1,
                  has_interference=True,
                  allow_offload=True,
                  dpi_sample_rate=None):
@@ -56,6 +57,7 @@ class MultiCellNetwork:
         self.accelerate = accelerate
         self.w_qos = w_qos
         self.w_xqos = w_xqos
+        self.w_pc = w_pc
         self.bss = OrderedDict()
         self.ues = {}
         self._bs_poses = None
@@ -100,6 +102,7 @@ class MultiCellNetwork:
         self._arrival_buf = np.zeros((self.buffer_ws, numApps))
         self._ue_stats = np.zeros((2, 2))
         self.ue_no_bs = 0
+        self.max_ue = 0
         self.cloud.reset()
         notice('Reset %s', repr(self))
 
@@ -135,7 +138,7 @@ class MultiCellNetwork:
         #         self.generate_new_ues(dt)
         # else:
         #     self.generate_new_ues(dt)
-        for _ in range(10):
+        for _ in range(14):
             self.generate_new_ues(dt)
     
         self.scan_connections()
@@ -148,6 +151,7 @@ class MultiCellNetwork:
 
         for bs in self.bss.values():
             bs.step(dt)
+            self.max_ue = max(self.max_ue, bs.num_ue)
 
         for ue in list(self.ues.values()):
             ue.step(dt)
@@ -258,9 +262,9 @@ class MultiCellNetwork:
             assert ue.id not in self.ues, "UE %s already in the network" % ue.id
             # debug(f'{ue.id} added to the network')
         ue.net = self
-        # ue.cluster_size = self.cluster_size
         self.ues[ue.id] = ue
         self.measure_distances_and_gains(ue)
+        # ue.cluster_size = self.cluster_size
         self._arrival_buf[self._buf_idx, ue.service] += ue.demand
 
     def remove_user(self, ue_id):
@@ -268,6 +272,8 @@ class MultiCellNetwork:
         if ue.pilot:
             self.pilot_usage[ue.pilot].remove(ue)
         if ue.demand > 0.:
+            # print(ue.demand)
+            # sys.exit()
             self._ue_stats[1] += [1, ue.demand / ue.total_demand]
         else:
             self._ue_stats[0] += [1, ue.delay / ue.delay_budget]
@@ -372,26 +378,26 @@ class MultiCellNetwork:
         return self.bss[bs_id].get_observation()
     
     def get_bs_reward(self, bs_id):
-        return [self.bss[bs_id].get_reward(self.w_qos, self. w_xqos)]
+        return [self.bss[bs_id].get_reward(self.w_qos, self. w_xqos, self.w_pc)]
     
-    # @cache_obs
-    # def observe_bs_network(self, bs_id):
-    #     bs_obs = np.array(self.observe_bs(bs_id))
-    #     bs = self.bss[bs_id]
-    #     thrps = np.zeros(3 + 1)
-    #     for ue in bs.covered_ues:
-    #         thrps[ue.status] += ue.required_rate
-    #         thrps[-1] += ue.data_rate
-    #     return np.concatenate([
-    #         [bs.power_consumption],  # power consumption (1)
-    #         [bs._ue_stats[0, 0],
-    #          bs.delay_ratio,
-    #          bs._ue_stats[1, 0],
-    #          bs.drop_ratio],  # delay and drop ratio (4)
-    #         # self.arrival_rates,  # arrival rates of new UEs in different delay cats (3)
-    #         thrps / 1e6,  # required (idle, queued, active) and actual sum rates (4)
-    #         # bs_obs  # bs observations
-    #     ], dtype=np.float32)
+    @cache_obs
+    def observe_bs_network(self, bs_id):
+        bs_obs = np.array(self.observe_bs(bs_id))
+        bs = self.bss[bs_id]
+        thrps = np.zeros(3 + 1)
+        for ue in bs.covered_ues:
+            thrps[ue.status] += ue.required_rate
+            thrps[-1] += ue.data_rate
+        return np.concatenate([
+            [bs.power_consumption],  # power consumption (1)
+            [bs._ue_stats[0, 0],
+             bs.delay_ratio,
+             bs._ue_stats[1, 0],
+             bs.drop_ratio],  # delay and drop ratio (4)
+            # self.arrival_rates,  # arrival rates of new UEs in different delay cats (3)
+            thrps / 1e6,  # required (idle, queued, active) and actual sum rates (4)
+            # bs_obs  # bs observations
+        ], dtype=np.float32)
 
     # @cache_obs
     # def observe_bs_network(self, bs_id):
@@ -416,29 +422,29 @@ class MultiCellNetwork:
     #         bs_obs                      # bs observations
     #     ], dtype=np.float32)
         
-    @cache_obs
-    def observe_network(self):
-        # bs_obs = [self.observe_bs(i) for i in range(self.num_bs)]
-        # for i in range(self.num_bs):
-        #     bs_obs.append(self.bss[i].get_observation())
-        # for i in range(self.num_bs):
-        #     for j in range(i):
-        #         bs_obs.append(self.bss[i].observe_other(self.bss[j])[0])
-        # bs_obs = np.concatenate(bs_obs, dtype=np.float32)
-        thrps = np.zeros(3 + 1)
-        for ue in self.ues.values():
-            thrps[ue.status] += ue.required_rate
-            thrps[-1] += ue.data_rate
-        return np.concatenate([
-            [self.power_consumption],   # power consumption (1)
-            [self._ue_stats[0,0],
-             self.delay_ratio,
-             self._ue_stats[1,0],
-             self.drop_ratio],          # delay and drop ratio (4)
-            self.arrival_rates,         # arrival rates of new UEs in different delay cats (3)
-            thrps / 1e6,                # required (idle, queued, active) and actual sum rates (4)
-            # bs_obs                      # bs observations
-        ], dtype=np.float32)
+    # @cache_obs
+    # def observe_network(self):
+    #     # bs_obs = [self.observe_bs(i) for i in range(self.num_bs)]
+    #     # for i in range(self.num_bs):
+    #     #     bs_obs.append(self.bss[i].get_observation())
+    #     # for i in range(self.num_bs):
+    #     #     for j in range(i):
+    #     #         bs_obs.append(self.bss[i].observe_other(self.bss[j])[0])
+    #     # bs_obs = np.concatenate(bs_obs, dtype=np.float32)
+    #     thrps = np.zeros(3 + 1)
+    #     for ue in self.ues.values():
+    #         thrps[ue.status] += ue.required_rate
+    #         thrps[-1] += ue.data_rate
+    #     return np.concatenate([
+    #         [self.power_consumption],   # power consumption (1)
+    #         [self._ue_stats[0,0],
+    #          self.delay_ratio,
+    #          self._ue_stats[1,0],
+    #          self.drop_ratio],          # delay and drop ratio (4)
+    #         self.arrival_rates,         # arrival rates of new UEs in different delay cats (3)
+    #         thrps / 1e6,                # required (idle, queued, active) and actual sum rates (4)
+    #         # bs_obs                      # bs observations
+    #     ], dtype=np.float32)
 
     def info_dict(self, include_bs=False):
         # assert self._stats_updated
@@ -449,8 +455,8 @@ class MultiCellNetwork:
             time=self.world_time_repr,
             pc=self.power_consumption,  # W
             cluster_size=self.cluster_size,
-            actual_rate=sum(ue.data_rate for ue in self.ues.values()) / 1e6,  # Mb/s
-            required_rate=sum(ue.required_rate for ue in self.ues.values()) / 1e6,
+            actual_rate=sum(ue.data_rate for ue in self.ues.values()) / (self.num_ue + 1e-3) / 1e6,  # Mb/s
+            required_rate=sum(ue.required_rate for ue in self.ues.values()) / (self.num_ue + 1e-3) / 1e6,
             arrival_rate=self.arrival_rates.sum(),
             idle_ues=ue_counts[0], queued_ues=ue_counts[1], active_ues=ue_counts[2],
             signal_power=sum(ue.signal_power for ue in self.ues.values()) / (self.num_ue + 1e-3),

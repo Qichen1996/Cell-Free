@@ -102,8 +102,8 @@ class MappoPolicy(Policy):
         torch.save(self.critic.state_dict(), osp.join(save_dir, "critic%s.pt" % version))
 
     def load(self, model_dir, version=''):
-        # actor_file = next(model_dir.glob(f'actor*{version}.pt'))
-        actor_file = osp.join(model_dir, f'actor{version}.pt')
+        actor_file = next(model_dir.glob(f'actor*{version}.pt'))
+        # actor_file = osp.join(model_dir, f'actor_eps70.pt')
         notice("Loading actor network from {}".format(actor_file))
         self.actor.load_state_dict(torch.load(str(actor_file)))
         try:

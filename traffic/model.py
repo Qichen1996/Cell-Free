@@ -74,7 +74,7 @@ class TrafficModel:
 
         self.densities = df / 1e6
         df = pd.concat([self.densities, self.rates], axis=1, keys=['Mb/s/km^2', 'files/s'])
-        total_df = df.groupby(level=0, axis=1).sum()
+        total_df = df.T.groupby(level=0).sum().T
         for k in df.columns.levels[0]:
             df[k, 'Total'] = total_df[k]
         info_df = df.describe().T[['mean', 'std', 'min', 'max']].sort_index()

@@ -26,7 +26,7 @@ class MultiCellNetEnv(MultiAgentEnv):
     # w_delay_cats = np.array(config.delayAppWeights)
     # w_drop = config.dropRatioWeight
     # w_delay = config.delayWeight
-    # w_pc = config.pcWeight
+    w_pc = config.pcWeight
     w_qos = config.qosWeight
     w_xqos = config.extraQosWeight
     episode_time_len = config.episodeTimeLen
@@ -47,7 +47,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         no_offload=False,
         max_sleep=3,
         dpi_sample_rate=None,
-        # w_pc=w_pc,
+        w_pc=w_pc,
         w_qos=w_qos,
         w_xqos=w_xqos,
         # w_drop=w_drop,
@@ -67,6 +67,7 @@ class MultiCellNetEnv(MultiAgentEnv):
             accelerate=accelerate,
             w_qos=w_qos,
             w_xqos=w_xqos,
+            w_pc=w_pc,
             has_interference=not no_interf,
             allow_offload=not no_offload,
             max_sleep_depth=max_sleep,
@@ -81,14 +82,14 @@ class MultiCellNetEnv(MultiAgentEnv):
         self.observation_space = [self.net.bs_obs_space
                                   for _ in range(self.num_agents)]
         self.cent_observation_space = self.net.net_obs_space
-        # self.cent_observation_space = [self.net.net_obs_space
-        #                                for _ in range(self.num_agents)]
+        self.cent_observation_space = [self.net.net_obs_space
+                                       for _ in range(self.num_agents)]
         
         
         self.action_space = [MultiDiscrete(BaseStation.action_dims)
                              for _ in range(self.num_agents)]
 
-        # self.w_pc = w_pc
+        self.w_pc = w_pc
         self.w_qos = w_qos
         self.w_xqos = w_xqos
         # self.w_drop = w_drop
@@ -124,7 +125,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         notice('Observation space: {}'.format(
             (self.num_agents, *self.observation_space[0].shape)))
         notice('Central observation space: {}'.format(
-            self.cent_observation_space.shape))
+            self.cent_observation_space[0].shape))
         notice('Action space: {}'.format(
             (self.num_agents, self.action_space[0].shape)))
         notice('Seed: {}'.format(self._seed))
@@ -147,7 +148,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         pc_kw = pc * 1e-3
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + self.w_xqos * n_done * (1 - q_del)) / n
-        reward = self.w_qos * r_qos - pc_kw * 1      # 0.6
+        reward = self.w_qos * r_qos - pc_kw * self.w_pc      # dqn 0.1 mappo 0.4 0.5
         bs_reward = [self.net.get_bs_reward(i) for i in range(self.num_agents)]
         se_list = [ue.SE for ue in self.net.ues.values()]
         avg_se = np.mean(se_list) if se_list else 0
@@ -172,7 +173,7 @@ class MultiCellNetEnv(MultiAgentEnv):
             # r_info['drop_ratios'] = dr
             # r_info['ue_delays'] = dl
         self._reward_stats.append(r_info)
-        return reward
+        return bs_reward
 
     def get_obs_agent(self, agent_id):
         return self.net.observe_bs(agent_id)
@@ -180,11 +181,11 @@ class MultiCellNetEnv(MultiAgentEnv):
     def get_centobs_agent(self, agent_id):
         return self.net.observe_bs_network(agent_id)
 
-    # def get_cent_obs(self):
-    #     return [self.get_centobs_agent(i) for i in range(self.num_agents)]
-
     def get_cent_obs(self):
-        return [self.net.observe_network()]
+        return [self.get_centobs_agent(i) for i in range(self.num_agents)]
+
+    # def get_cent_obs(self):
+    #     return [self.net.observe_network()]
     
     def reset(self, render_mode=None):
         # self.seed()
@@ -231,7 +232,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         cent_obs = self.get_cent_obs()
         rewards = self.get_reward(cent_obs[0])
 
-        rewards = [[rewards]]  # shared reward for all agents
+        # rewards = [[rewards]]  # shared reward for all agents
 
         done = self._episode_steps >= self.episode_len
         infos = {}
@@ -267,7 +268,7 @@ class MultiCellNetEnv(MultiAgentEnv):
             reward = self._sim_steps and self._reward_stats[-1]['reward'],
             pc_kw = self._sim_steps and self._reward_stats[-1]['pc_kw'],
             se = self._sim_steps and self._reward_stats[-1]['avg_se'],
-            qos_reward = self._sim_steps and self._reward_stats[-1]['qos_reward'] * self.w_qos,
+            qos_reward = self._sim_steps and self._reward_stats[-1]['qos_reward'],
             drop_ratio = self._sim_steps and self._reward_stats[-1]['drop_ratio'],
         )
         return info
@@ -279,6 +280,7 @@ class MultiCellNetEnv(MultiAgentEnv):
         
     def close(self):
         if EVAL:
+            print(f'max ue: {self.net.max_ue}')
             stats_dir = self.full_stats_dir
             os.makedirs(stats_dir, exist_ok=True)
             self.net.save_stats(stats_dir)

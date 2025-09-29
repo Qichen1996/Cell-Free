@@ -57,7 +57,7 @@ class BaseStation:
     other_obs_space = concat_box_envs(public_obs_space, mutual_obs_space)
     total_obs_space = concat_box_envs(
         self_obs_space, duplicate_box_env(
-            other_obs_space, 6))
+            other_obs_space, 8))
     # total_obs_space = self_obs_space
     
     public_obs_dim = box_env_ndims(public_obs_space)
@@ -115,6 +115,7 @@ class BaseStation:
         self._energy_consumed = 0
         self._sleep_time = np.zeros(self.num_sleep_modes)
         self._conn_time = np.zeros(self.num_conn_modes)
+        self._sleep_steps = 0
         # self._energy_consumed = defaultdict(float)
         self._buffer = np.zeros(self.buffer_shape, dtype=np.float32)
         # self._buffer = np.full(self.buffer_shape, np.nan, dtype=np.float32)
@@ -231,8 +232,32 @@ class BaseStation:
         if not TRAIN:
             # assert len(action) == len(self.action_dims)
             info(f'BS {self.id} takes action:\n{action}')
-        # self.switch_antennas(int(action[0]))
-        self.switch_sleep_mode(int(action[0]))
+
+        # obs = self.get_observation()
+        # infos = self.annotate_obs(obs)
+        # sm = infos['sleep_mode']
+        # thrp_req_idle = infos['idle_sum_rate_req']
+        # thrp_req = infos['serving_sum_rate_req']
+        # thrp = infos['serving_sum_rate']
+        # new_sm = sm
+        # if sm:
+        #     self._sleep_steps += 1
+        #     if thrp_req_idle:  # wakeup
+        #         new_sm = 0
+        #     # elif sm == 1:
+        #     #     if self._sleep_steps >= 10:
+        #     #         new_sm = 2
+        #     # elif sm == 2 and self._sleep_steps >= 50:
+        #     #     new_sm = 3
+        # else:
+        #     self._sleep_steps = 0
+        #     if thrp_req == 0:
+        #         new_sm = 1        
+            
+        # self.switch_sleep_mode(int(new_sm))
+        
+        self.switch_antennas(int(action[0]))
+        self.switch_sleep_mode(int(action[1]))
         # self.switch_connection_mode(int(action[2]) - 1)
     
     def switch_antennas(self, opt):
@@ -244,9 +269,21 @@ class BaseStation:
         # if TRAIN:  # reduce number of antenna switches
         #     self.consume_energy(energy_cost, 'antenna')
         num_ant_new = self.num_ant + num_switch
+        
+
+        # h = self.net.world_time_repr[5:]
+        
+        # if h < "03:59" or h >= "22:59":
+        #     num_ant_new = 5
+        # elif (h >= "03:59" and h < "06:59") or (h >= "18:59" and h < "22:59"):
+        #     num_ant_new = 6
+        # elif (h >= "18:59" and h < "08:59") or (h >= "16:59" and h < "18:59"):
+        #     num_ant_new = 7
+        # else:
+        #     num_ant_new = 8
+        
         if (num_ant_new < self.min_antennas or
-            num_ant_new > self.max_antennas or
-            num_ant_new <= self.num_ue):
+            num_ant_new > self.max_antennas):
             return  # invalid action
         if EVAL:
             self._total_stats['ant_switches'] += abs(num_switch)
@@ -397,12 +434,19 @@ class BaseStation:
     def alloc_power(self):
         if not self.ues: return
         if len(self.ues) > 1:
-            alpha = 1
+            alpha = 0
             beta = 1
             gamma = np.array([ue._gamma[self.id] for ue in self.ues.values()])
             r = np.array([ue.required_rate for ue in self.ues.values()]) / 1e7
             w = (self.power_alloc_base ** np.minimum(r, 50.0)) ** alpha * (gamma ** beta)
             ps = self.transmit_power * w / w.sum()
+            # if self.id == 0:
+            #     print(f'gamma: {gamma}')
+            #     print(f'r: {r}')
+            #     print(f'w: {w}')
+            #     print(f'ps: {ps}')
+            # num_ues = len(self.ues)
+            # ps = np.full(num_ues, self.transmit_power / num_ues)
         else:
             ps = [self.transmit_power]
         self._power_alloc = dict(zip(self.ues.keys(), ps))
@@ -421,7 +465,7 @@ class BaseStation:
                 if DEBUG:
                     info('BS {}: automatically waking up'.format(self.id))
                 self.switch_sleep_mode(0)
-            elif self.sleep == 0 and not self.ues and self._prev_sleep == 1:
+            elif self.sleep == 0 and not self.ues:
                 if DEBUG:
                     info('BS {}: automatically goes to sleep'.format(self.id))
                 self.switch_sleep_mode(1)
@@ -608,9 +652,9 @@ class BaseStation:
 
         P_total *= sleep_deltas[S]
 
-        self.P_st   = P_st
-        self.P_tr   = P_tr
-        self.P_proc = P_proc
+        # self.P_st   = P_st
+        # self.P_tr   = P_tr
+        # self.P_proc = P_proc
 
         if EVAL:
             rec = dict(
@@ -624,7 +668,7 @@ class BaseStation:
                 P_proc   = P_proc,
                 P_total  = P_total
             )
-            self.net.add_stat('pc', rec)       
+            # self.net.add_stat('pc', rec)       
             debug(f'BS {self.id}: {kwds_str(**rec)}')
 
         return P_total
@@ -663,7 +707,7 @@ class BaseStation:
         """ Average delay/budget for each app category in the current step. """
         return div0(self._ue_stats[0, 1], self._ue_stats[0, 0])
     
-    def get_reward(self, w_qos, w_xqos):
+    def get_reward(self, w_qos, w_xqos, w_pc):
         pc_kw = self.power_consumption * 1e-3
         n_done = self._ue_stats[0,0]
         q_del = self.delay_ratio
@@ -671,7 +715,7 @@ class BaseStation:
         q_drop = self.drop_ratio
         n = n_done + n_drop + 1e-6
         r_qos = (-n_drop * q_drop + w_xqos * n_done * (1 - q_del)) / n
-        reward = w_qos * r_qos - pc_kw * 0.1
+        reward = w_qos * r_qos - pc_kw * w_pc
         return reward
         
     # @timeit
@@ -697,7 +741,7 @@ class BaseStation:
             obs.append(pub_obs)
             obs.append(mut_obs)
             num_bs += 1
-        while num_bs < 6:
+        while num_bs < 8:
             pub_zero = np.zeros_like(pub_obs)
             mut_zero = np.zeros_like(mut_obs)
             obs.append(pub_zero)
@@ -753,14 +797,14 @@ class BaseStation:
         serving_ues = []
         queued_ues = []
         idle_ues = []
-        for ue in self.covered_ues:
-            if not ue.bss:
-                idle_ues.append(ue)
-            elif ue in self.ues.values():
+        for ue in self.covered_ues:             
+            if ue in self.ues.values():
                 if ue.active:
                     serving_ues.append(ue)
             elif ue in self.queue:
                 queued_ues.append(ue)
+            else:
+                idle_ues.append(ue)
         return np.array([self.get_ue_stats(ues) for ues in
                          [self.covered_ues, serving_ues, queued_ues, idle_ues]],
                         dtype=np.float32)
@@ -788,6 +832,17 @@ class BaseStation:
             # wakeup_time=int(self.wakeup_time * 1000),
             # **self._stats
         )
+
+        # h = self.net.world_time_repr
+        # if self.id == 0:
+        #     ant = infos["n_ants"]
+        #     if isinstance(ant, float) and ant.is_integer():
+        #         print(f'ant 是浮点数类型，但值为整数: {ant}, {h}')
+        #     elif isinstance(ant, float):
+        #         print(f'ant 是浮点数（带小数部分）: {ant}, {h}')
+        #     elif isinstance(ant, int):
+        #         print("ant 是整数类型")
+            
         return infos
     
     def calc_total_stats(self):

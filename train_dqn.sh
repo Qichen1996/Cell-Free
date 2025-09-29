@@ -6,19 +6,21 @@ export DEBUG=1
 export TRAIN=1
 export EVAL=0
 
+export WANDB_MODE=offline
+
 scenario="B"
 accelerate=1200  # 1 step = 0.02 * 1200 = 24 s
 n_training_threads=24
 n_rollout_threads=2
-num_env_steps=$((25200 * 200))  # steps_per_episode * episodes
+num_env_steps=$((25200 * 9))  # steps_per_episode * episodes
 experiment="check"
 
 algo="dqn"
 gamma=0.99
 lr=3e-4
 
-w_qos=30
-w_xqos=0.005
+w_qos=60
+w_xqos=0.001
 
 log_interval=1
 

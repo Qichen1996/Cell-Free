@@ -137,6 +137,22 @@ class DQNTrainer(BaseTrainer):
 
                 # update target network
                 if steps % args.target_network_frequency == 0:
+                    avg_drop_ratio = np.mean([
+                        step["drop_ratio"]
+                        for info in infos
+                        for step in info["step_rewards"]
+                    ])
+                    avg_pc = np.mean([
+                        step["pc_kw"]
+                        for info in infos
+                        for step in info["step_rewards"]
+                    ])
+                    avg_rwd = np.mean([
+                        step["reward"]
+                        for info in infos
+                        for step in info["step_rewards"]
+                    ])
+                    print(f"dp: {avg_drop_ratio*100:.4f}%, pc: {avg_pc:.4f}, rwd: {avg_rwd:.4f}")
                     for self.targ_net_param, self.net_param in zip(self.targ_net.parameters(), self.q_net.parameters()):
                         self.targ_net_param.data.copy_(
                             args.tau * self.net_param.data + (1.0 - args.tau) * self.targ_net_param.data
@@ -153,18 +169,6 @@ class DQNTrainer(BaseTrainer):
                     rew_info = rew_df.describe().loc[['mean']].unstack()
                     rew_info.index = ['_'.join(idx) for idx in rew_info.index]
                     self.log_train(rew_info, steps)
-                    avg_drop_ratio = np.mean([
-                        step["drop_ratio"]
-                        for info in infos
-                        for step in info["step_rewards"]
-                    ])
-                    avg_pc = np.mean([
-                        step["pc_kw"]
-                        for info in infos
-                        for step in info["step_rewards"]
-                    ])
-                    print(f'dp: {avg_drop_ratio}')
-                    print(f'pc: {avg_pc}')
 
     def take_actions(self, obs):
         return np.array([self.q_net(torch.Tensor(ob).to(self.device))

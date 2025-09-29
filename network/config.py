@@ -7,20 +7,20 @@ renderMode = 'none'
 numBS = 25
 interBSDist = 200  # the distance between two adjacent BSs
 # cellRadius = 750  # the radius of a hexagon cell in meters
-txPower = 0.1  # average transmit power per antenna in watts
+txPower = 1  # average transmit power per antenna in watts
 maxPAPower = 3  # maximum antenna power in watts
 fixedPC = 18  # load-independent power consumption in watts
 bsFrequency = 5e9  # carrier frequency in Hz
 # feederLoss = 1  # feeder loss in dB (XXX: include in antennaGain)
 # antennaGain = 19 - feederLoss  # power gain in dB of each antenna of a BS
 signalThreshold = 2e-12  # signal threshold in watts
-maxAntennas = 16  # max number of antennas
-minAntennas = 4  # min number of antennas
-bandWidth = 10e6  # communication bandwidth in Hz
+maxAntennas = 8  # max number of antennas
+minAntennas = 0  # min number of antennas
+bandWidth = 20e6  # communication bandwidth in Hz
 bsHeight = 15  # height of a BS in meters
 # powerAllocWeights = [95, 4, 1]  # weights of the power allocation
 powerAllocBase = 2.
-antennaSwitchOpts = [-2, 0, 2]
+antennaSwitchOpts = [-1, 0, 1]
 clusterSizeOpts = [-1, 0, 1]
 # sleepModeDeltas = [1, 0.69, 0.50, 0.29]
 sleepModeDeltas = [1, 0.675, 0.55, 0.23]
@@ -45,26 +45,34 @@ ueHeight = 1.5  # height of a UE in meters
 
 # default network configuration
 
+def square_grid_centers(rows=5, cols=5, area_w=1000.0, area_h=1000.0):
+    xs = np.linspace(area_w/(2*cols), area_w - area_w/(2*cols), cols)
+    ys = np.linspace(area_h/(2*rows), area_h - area_h/(2*rows), rows)
+    centers = np.array([(x, y) for y in ys for x in xs])
+    return centers
 
-def calculate_hex_centers(rows, cols, size=1):
-    """Calculate hexagonal grid centers."""
-    w = 0
-    h = 0
-    centers = []
-    for r in range(rows):
-        for c in range(cols):
-            x = 3/2 * c * size + 50
-            y = np.sqrt(3) * (r + 0.5 * (c % 2)) * size + 50
-            w = x if x > w else w
-            h = y if y > h else h
-            centers.append((x, y))
-    return centers, w, h
+bsPositions = square_grid_centers(5, 5, 1000.0, 1000.0)
+areaSize = np.array([1000.0, 1000.0])
+
+# def calculate_hex_centers(rows, cols, size=1):
+#     """Calculate hexagonal grid centers."""
+#     w = 0
+#     h = 0
+#     centers = []
+#     for r in range(rows):
+#         for c in range(cols):
+#             x = 3/2 * c * size + 50
+#             y = np.sqrt(3) * (r + 0.5 * (c % 2)) * size + 50
+#             w = x if x > w else w
+#             h = y if y > h else h
+#             centers.append((x, y))
+#     return centers, w, h
 
 
-centers, w, h = calculate_hex_centers(5, 5, size=interBSDist/np.sqrt(3))
-bsPositions = np.array(centers)
-areaSize = np.array([w+50, h+50])
-print(areaSize)
+# centers, w, h = calculate_hex_centers(5, 5, size=interBSDist/np.sqrt(3))
+# bsPositions = np.array(centers)
+# areaSize = np.array([w+50, h+50])
+# print(areaSize)
 
 # areaSize = np.array([2.5, 2.5]) * interBSDist * 4
 # bsPositions = np.vstack([
@@ -89,7 +97,7 @@ private_obs_keys = ['next_sleep_mode', 'wakeup_time',
                     *[f'{k}{i}' for i in range(-bufferNumChunks, 0) for k in hist_stats_keys],
                     *[f'{u}_{k}' for u in ue_groups for k in ue_stats_keys]]
 mutual_obs_keys = ['dist', *ue_stats_keys]
-other_obs_keys = [f'nb{i}_{k}' for i in range(6) for k in public_obs_keys + mutual_obs_keys]
+other_obs_keys = [f'nb{i}_{k}' for i in range(8) for k in public_obs_keys + mutual_obs_keys]
 all_obs_keys = public_obs_keys + private_obs_keys + other_obs_keys
 
 # pc model new
@@ -97,7 +105,7 @@ fs            = 30.72e6   # Hz，采样率
 Ts            = 71.4e-6   # s，OFDM 符号周期
 N_DFT         = 2048
 N_used        = 1200
-tau_p         = 15
+tau_p         = 7
 tau_c         = 200
 Delta_tr      = 4         
 P_proc0       = 20.8      

@@ -13,11 +13,9 @@ from visualize.render import create_dash_app
 sim_days = 7
 accelerate = 3000
 render_interval = 4
-model_params = dict(w_qos=4, no_interf=False, max_sleep=3, no_offload=False)
+model_params = dict(w_qos=4, w_pc=0.5, no_interf=False, max_sleep=3, no_offload=False)
 
 parser = get_config()
-parser.add_argument("-A", '--agent', type=str, default='mappo',
-                    help='type of agent used in simulation')
 parser.add_argument("--perf_save_path", default="results/performance.csv",
                     help="path to save the performance of the simulation")
 parser.add_argument("--render_interval", type=int, default=render_interval,
@@ -41,7 +39,7 @@ except:
     args = parser.parse_args([])
     env_args = env_parser.parse_args([])
     
-AGENT = args.agent
+AGENT = args.algorithm_name
 
 if args.experiment_name == 'test': args.use_wandb = False
 args.num_env_steps = args.days * 24 * 3600 * 50 // env_args.accelerate
@@ -74,6 +72,7 @@ def make_env(args, seed=None):
 def get_model_dir(args, env_args, run_dir, version=''):
     assert run_dir.exists(), "Run directory does not exist: {}".format(run_dir)
     if args.model_dir is not None:
+        
         return run_dir / args.model_dir
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
@@ -88,6 +87,9 @@ def get_model_dir(args, env_args, run_dir, version=''):
             return d
         with open(config_path) as f:
             cfg = yaml.safe_load(f)
+            for k in model_params:
+                 if k in cfg:
+                    print(cfg[k]['value'])
             if all(getattr(env_args, k) == cfg[k]['value']
                     for k in model_params if k in cfg):
                 return d
@@ -96,7 +98,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
 env = make_env(env_args, seed=args.seed)
 
 obs_space = env.observation_space[0]
-cent_obs_space = env.cent_observation_space
+cent_obs_space = env.cent_observation_space[0]
 action_space = env.action_space[0]
 
 run_dir = get_run_dir(args, env_args)
@@ -178,11 +180,11 @@ def simulate():
     #     env.step()
     obs, _, _ = env.reset(render_mode)
 
-    # for i in trange(args.num_env_steps, file=sys.stdout):
-    #     actions = agent.act(obs, deterministic=not args.stochastic)
-    #     obs, _, rewards, done, _, _ = env.step(
-    #         actions, render_mode=render_mode, render_interval=render_interval)
-    # env._trajectory = env._trajectory[-1:]
+    for i in trange(args.num_env_steps, file=sys.stdout):
+        actions = agent.act(obs, deterministic=not args.stochastic)
+        obs, _, rewards, done, _, _ = env.step(
+            actions, render_mode=render_mode, render_interval=render_interval)
+    env._trajectory = env._trajectory[-1:]
         
 
     for i in trange(args.num_env_steps, file=sys.stdout):
@@ -224,6 +226,7 @@ def simulate():
     # info['w_pc'] = env.w_pc
     info['w_qos'] = env.w_qos
     info['w_xqos'] = env.w_xqos
+    info['w_pc'] = env.w_pc
     print(info)
     
     save_path = args.perf_save_path

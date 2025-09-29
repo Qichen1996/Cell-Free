@@ -9,7 +9,6 @@ import plotly.express as px
 import plotly.io as pio
 import os
 
-
 plotly_template = pio.templates['plotly']
 plotly_template['layout'].update(
     margin=dict(l=90, r=40, t=40, b=70),
@@ -38,6 +37,7 @@ df.head()
 # %%
 group = 'baselines'
 # group = 'antenna'
+group = 'pc'
 columns = ['actual_rate',
            'arrival_rate',
            'interference',
@@ -54,15 +54,15 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'90%0,3_10': 'SM0/3', '90%0,1_10': 'SM0/1', '90%_SM0,1,2,3_STEP10': 'Joint-SM-Ant', 'fixed_0-3_step10': 'Fixed-cluster', '90%_SM0,1,2,3_10_nopower':'90% (ASM) no power alloc','fixed': 'Always-on','90%_SM0,1,2,3_Ant8_NoTrain': 'Ant-8', '90%_SM0,1,2,3_Ant16_NoTrain': 'Ant-16', 'mappo': 'MAPPO', 'simple1': 'Auto-SM1', 'dqn': 'DQN'})
+        df = df.rename({'fixed': 'Always-on', 'mappo_ant': 'MAPPO_Ant', 'mappo_sm': 'MAPPO_SM', 'mappo': 'MAPPO', 'simple1': 'Auto-SM1', 'dqn': 'DQN', 'simple': 'Auto-SM+'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
+    elif group == 'pc':
+        df = df.rename({'fixed_gamma': 'All-gamma', 'simple1_gamma': 'Auto-gamma', 'fixed_ab': 'All-both', 'simple1_ab': 'Auto-both', 'fixed_rate': 'All-rate', 'simple1_rate': 'Auto-rate', 'mappo_w_qos=40.0_w_pc=0.8': 'ppo'})
     elif group == 'w':
         df = df.rename({'mappo_w_qos=40.0': 'STEP11_SM0,3'})
-    elif group == '90%':
-        df = df.rename({'90%gain_SM0,1,2,3': 'SM0,1,2,3', '90%gain_SM0': 'SM0', '90%gain_SM0,SM1': 'SM0,1', '90%gain_SM0,SM3': 'SM0,3'})
     elif group == 'antenna':
-        df = df.rename({'fixed_ant10': 'Ant10', 'fixed_ant16': 'Ant16'})
+        df = df.rename({'simple1_full': 'All-on', 'simple1_fixed': 'Fixed', 'simple1_ppo': 'MAPPO'})
     elif group == 'wqos':
         df = df.rename_axis([
             'w_qos', *df.index.names[1:]
@@ -100,10 +100,12 @@ def refactor(df):
 if group in ['baselines', 'baselines-no-offload']:
     # policies = ['Ant-16', 'Ant-8', 'SM0/1', 'SM0/3', 'Fixed-cluster', 'Always-on', 'Joint-SM-Ant']
     policies = ['Always-on', 'Auto-SM1', 'MAPPO', 'DQN']
+elif group == 'pc':
+    policies = ['All-both', 'All-gamma', 'Auto-both', 'Auto-gamma', 'ppo']
 elif group == 'w':
     policies = ['STEP11_SM0,3']
-elif group == '90%':
-    policies = ['SM0,1,2,3','SM0','SM0,3', 'SM0,1']
+elif group == 'antenna':
+    policies = ['All-on','Fixed','MAPPO']
 elif group == 'antenna':
     policies = 'Ant10 Ant16'.split()
 elif group == 'wqos':
@@ -137,7 +139,7 @@ name_maps = {
     'actual_rate': 'data rate (Mb/s)',
     'arrival_rate': 'arrival rate (Mb/s)',
     'sum_tx_power': 'total transmit power (W)',
-    'avg_antennas': 'average antennas',
+    'avg_antennas': 'Average active antennas per AP',
     'sm0_cnt': 'active BSs', 'sm1_cnt': 'BSs in SM1',
     'sm2_cnt': 'BSs in SM2', 'sm3_cnt': 'BSs in SM3'
 }
@@ -147,6 +149,7 @@ vars_df = df.loc[policies, list(name_maps)].rename(columns=name_maps).copy()
 vars_df['energy efficiency (kb/J)'] = vars_df['data rate (Mb/s)'] / (
     vars_df['Power Consumption (kW)'] + 1e-6)
 # vars_df = vars_df.iloc[::win_sz]
+# vars_df.to_csv('filename1.csv', index=True)
 vars_df = vars_df.rolling(win_sz).mean().shift(-59)[::win_sz]
 # vars_df = vars_df.rolling(win_sz).mean()[win_sz::win_sz]
 # vars_df.to_csv('filename.csv', index=True)
@@ -183,13 +186,68 @@ for scenario in vars_df.index.levels[1]:
     }).sort_index(axis=1)
     
     for g in _df.index.levels[0]:
-        f = px.area(_df.loc[g], labels={'value': 'number of BSs', 'variable': 'sleep mode', 'time': 'Time'},
+        f = px.area(_df.loc[g], labels={'value': 'Number of APs', 'variable': 'sleep mode', 'time': 'Time'},
                         color_discrete_sequence=np.array(px.colors.qualitative.Plotly)[[1, 4, 2, 0]])
         f.update_xaxes(dtick=2)
         # output_path = f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf'
         # os.makedirs(os.path.dirname(output_path), exist_ok=True)
         # f.write_image(output_path, scale=2)
-        f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
+        # f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
+
+    # from plotly.subplots import make_subplots
+    # import plotly.graph_objects as go
+    # fig = make_subplots(
+    #     rows=1, cols=len(_df.index.levels[0]), shared_yaxes=True,
+    #     subplot_titles=[f"{g}" for g in _df.index.levels[0]],
+    #     column_widths=[0.5, 0.5],
+    #     horizontal_spacing=0.03
+    # )
+
+    # for anno in fig['layout']['annotations']:
+    #     anno['font'] = dict(size=20)
+    
+    # colors = np.array(px.colors.qualitative.Plotly)[[1, 4, 2, 0]]
+    
+    # for i, g in enumerate(_df.index.levels[0], start=1):
+    #     df_g = _df.loc[g].reset_index()
+        
+    #     # 这里确保 y 轴包含所有模式
+    #     f = px.area(
+    #         df_g,
+    #         x="time", 
+    #         y=["Active", "SM1", "SM2", "SM3"],   # 🔹 强制指定四个列
+    #         labels={'value': 'Number of APs', 'variable': 'Sleep mode', 'time': 'Time'},
+    #         color_discrete_sequence=colors
+    #     )
+        
+    #     for trace in f.data:
+    #         if i > 1:   # 右边 subplot 去掉 legend
+    #             trace.showlegend = False
+    #         fig.add_trace(trace, row=1, col=i)
+    
+    # # 设置布局
+    # fig.update_layout(
+    #     width=900, height=400,
+    #     showlegend=True,
+    #     legend=dict(
+    #         orientation="h",
+    #         yanchor="bottom", y=-0.29,
+    #         xanchor="center", x=0.5, 
+    #         itemsizing="constant",
+    #         itemwidth=50,
+    #         entrywidth=90,         # 每个 legend 占的宽度
+    #         # entrywidthmode="pixels" # 用像素为单位
+    #     ),
+    #     yaxis=dict(
+    #         title="Number of APs",
+    #         title_standoff=3 
+    #     )
+    # )
+    
+    # fig.update_xaxes(dtick=2, tickangle=45)
+    
+    # fig.write_image(f'sim_plots/{group}_{scenario}_SM_daily_combined.pdf', scale=2)
+    # sys.exit()
 
     re_pat = re.compile(r'antennas \((BS \d+)\)')
     cols = [k for k in _sdf.keys() if re_pat.match(k)]
@@ -198,20 +256,17 @@ for scenario in vars_df.index.levels[1]:
         [(g, *s.split()) for g, s in _sdf.index],
         names=['group', 'day', 'time'])
     _sdf.drop(columns=cols, inplace=True)
-    _df = _df.reset_index().groupby(['group', 'time']).mean()
+    _df = _df.reset_index().groupby(['group', 'time']).mean(numeric_only=True)
+    bad = [k for k in _df.columns if not re_pat.search(k)]
     _df = _df.rename(columns=dict(
         (k, re_pat.match(k)[1])
         for k in _df.columns))
     
     for g in _df.index.levels[0]:
-        f = px.line(_df.loc[g], labels={'value': 'number of active antennas', 'variable': ''})
+        f = px.line(_df.loc[g], labels={'value': 'Number of active antennas', 'variable': ''})
         f.update_xaxes(dtick=2)
-        f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
+        # f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
     
-    for g in _df.index.levels[0]:
-        f = px.line(_df.loc[g], labels={'value': 'number of active antennas', 'variable': ''})
-        f.update_xaxes(dtick=2)
-        f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
 
     for key, ser in _sdf.items():
         print(scenario, key)
@@ -239,10 +294,10 @@ for scenario in vars_df.index.levels[1]:
         fig.update_yaxes(exponentformat='power')  # range=[ymin, ymax]
         key = key.replace('/', 'p')
         fig.update_xaxes(dtick=2)
-        fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
+        # fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
         fig1 = px.line(_df1, labels={'value': key, 'time': 'Time'})
         fig1.update_xaxes(dtick=2)
-        fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
+        # fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
         
     # rate_df = _sdf[['Data Rate (Mb/s)', 'Arrival Rate (Mb/s)']]
     # arr_rates = rate_df['Arrival Rate (Mb/s)'].unstack().values
