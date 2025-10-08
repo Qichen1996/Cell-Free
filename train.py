@@ -118,11 +118,11 @@ def main(args):
             project=args.env_name,
             entity=args.user_name,
             notes=socket.gethostname(),
-            name=f"{args.algorithm_name}_{args.experiment_name}_seed{args.seed}",
+            name=f"{args.algorithm_name}_{args.w_qos}_{args.w_pc}",
             group=env_args.scenario,
             dir=str(run_dir),
             job_type="training",
-            reinit=True,
+            id=f"{args.w_qos}_{args.w_pc}",
         )
     else:
         if not run_dir.exists():

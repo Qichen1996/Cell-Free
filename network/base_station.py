@@ -264,7 +264,7 @@ class BaseStation:
         if DEBUG:
             assert opt in range(self.num_ant_switch_opts)
         num_switch = self.ant_switch_opts[opt]
-        if num_switch == 0: return
+        # if num_switch == 0: return
         # energy_cost = self.ant_switch_energy * abs(num_switch)
         # if TRAIN:  # reduce number of antenna switches
         #     self.consume_energy(energy_cost, 'antenna')
@@ -272,12 +272,16 @@ class BaseStation:
         
 
         # h = self.net.world_time_repr[5:]
-        
-        # if h < "03:59" or h >= "22:59":
+
+        # if "02:59" <= h < "03:59":
+        #     num_ant_new = 3
+        # elif h < "02:59" or "03:59" <= h < "06:59" or h >= "20:59":
+        #     num_ant_new = 4
+        # elif (h >= "06:59" and h < "07:59") or (h >= "18:59" and h < "20:59"):
         #     num_ant_new = 5
-        # elif (h >= "03:59" and h < "06:59") or (h >= "18:59" and h < "22:59"):
+        # elif (h >= "07:59" and h < "08:59"):
         #     num_ant_new = 6
-        # elif (h >= "18:59" and h < "08:59") or (h >= "16:59" and h < "18:59"):
+        # elif (h >= "08:59" and h < "10:59") or (h >= "15:59" and h < "18:59"):
         #     num_ant_new = 7
         # else:
         #     num_ant_new = 8

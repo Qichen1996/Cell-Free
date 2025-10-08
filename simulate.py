@@ -98,7 +98,7 @@ def get_model_dir(args, env_args, run_dir, version=''):
 env = make_env(env_args, seed=args.seed)
 
 obs_space = env.observation_space[0]
-cent_obs_space = env.cent_observation_space[0]
+cent_obs_space = env.cent_observation_space
 action_space = env.action_space[0]
 
 run_dir = get_run_dir(args, env_args)

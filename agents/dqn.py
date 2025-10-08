@@ -83,4 +83,5 @@ class DQNPolicy:
     def load(self, model_dir, version=''):
         path = os.path.join(model_dir, f"dqn{version}.pt")
         notice(f"Loading model from {path}")
-        self.q_net.load_state_dict(torch.load(path))
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.q_net.load_state_dict(torch.load(path, map_location=device))

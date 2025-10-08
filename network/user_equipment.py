@@ -292,16 +292,16 @@ class UserEquipment:
             delay = self.delay
             service_time = self.t_served
             steps = self._sinr_stats.pop('T', 1)
-            # self.net.add_stat('ue_stats', dict(
-            #     demand = self.total_demand,
-            #     done = done,
-            #     dropped = dropped,
-            #     delay = delay,
-            #     delay_budget = self.delay_budget,
-            #     service_time = service_time,
-            #     **{'avg_'+k: self._sinr_stats[k]/steps
-            #        for k in list(self._sinr_stats)}
-            # ))
+            self.net.add_stat('ue_stats', dict(
+                demand = self.total_demand,
+                done = done,
+                dropped = dropped,
+                delay = delay,
+                delay_budget = self.delay_budget,
+                service_time = service_time,
+                # **{'avg_'+k: self._sinr_stats[k]/steps
+                #    for k in list(self._sinr_stats)}
+            ))
         self.net.remove_user(self.id)
         del self.__class__._cache[self.id]
     

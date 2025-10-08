@@ -37,7 +37,7 @@ df.head()
 # %%
 group = 'baselines'
 # group = 'antenna'
-group = 'pc'
+# group = 'pc'
 columns = ['actual_rate',
            'arrival_rate',
            'interference',
@@ -54,7 +54,7 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'fixed': 'Always-on', 'mappo_ant': 'MAPPO_Ant', 'mappo_sm': 'MAPPO_SM', 'mappo': 'MAPPO', 'simple1': 'Auto-SM1', 'dqn': 'DQN', 'simple': 'Auto-SM+'})
+        df = df.rename({'fixed': 'Always-on', 'mappo_ant': 'MAPPO_Ant', 'mappo_sm': 'MAPPO_SM', 'mappo_w_qos=60.0_w_pc=0.4': 'MAPPO', 'simple1': 'Auto-SM1', 'dqn': 'DQN', 'simple': 'Auto-SM+'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
     elif group == 'pc':
@@ -192,7 +192,7 @@ for scenario in vars_df.index.levels[1]:
         # output_path = f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf'
         # os.makedirs(os.path.dirname(output_path), exist_ok=True)
         # f.write_image(output_path, scale=2)
-        # f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
+        f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
 
     # from plotly.subplots import make_subplots
     # import plotly.graph_objects as go
@@ -265,7 +265,7 @@ for scenario in vars_df.index.levels[1]:
     for g in _df.index.levels[0]:
         f = px.line(_df.loc[g], labels={'value': 'Number of active antennas', 'variable': ''})
         f.update_xaxes(dtick=2)
-        # f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
+        f.write_image(f'sim_plots/{group}_{g}_{scenario}_ants_daily.pdf', scale=2)
     
 
     for key, ser in _sdf.items():
@@ -290,14 +290,31 @@ for scenario in vars_df.index.levels[1]:
         _df.index = pd.MultiIndex.from_tuples(
             [tuple(s.split()) for s in _df.index],
             names=['day', 'time'])
+        if key == "Average active antennas per AP":
+            _df.to_csv('filename.csv', index=True)
         _df1 = _df.reset_index(level=1).groupby('time').mean()
-        fig.update_yaxes(exponentformat='power')  # range=[ymin, ymax]
-        key = key.replace('/', 'p')
-        fig.update_xaxes(dtick=2)
-        # fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
-        fig1 = px.line(_df1, labels={'value': key, 'time': 'Time'})
-        fig1.update_xaxes(dtick=2)
-        # fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
+        if key == "Average active antennas per AP":
+            _df1.to_csv('filename1.csv', index=True)
+            _df1 = _df1.reset_index()   # 如果 time 在 index 中，会被还原成列
+            _df1["Auto-SM1"] = _df1["Auto-SM1"].astype(int)
+            df_melt = _df1.melt(id_vars=["time"], var_name="policy", value_name="Value")
+            # 画图
+            fig1 = px.line(df_melt, x="time", y="Value", color="policy", labels={"Value": "Average active antennas per AP", "time": "Time"})
+            
+            # 设置不同 Policy 的线型
+            fig1.for_each_trace(
+                lambda t: t.update(line_shape="hv") if t.name == "Auto-SM1" else t.update(line_shape="linear")
+            )
+            fig1.update_xaxes(dtick=1)
+            fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
+        else:
+            fig.update_yaxes(exponentformat='power')  # range=[ymin, ymax]
+            key = key.replace('/', 'p')
+            fig.update_xaxes(dtick=2)
+            # fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
+            fig1 = px.line(_df1, labels={'value': key, 'time': 'Time'})
+            fig1.update_xaxes(dtick=2)
+            fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
         
     # rate_df = _sdf[['Data Rate (Mb/s)', 'Arrival Rate (Mb/s)']]
     # arr_rates = rate_df['Arrival Rate (Mb/s)'].unstack().values

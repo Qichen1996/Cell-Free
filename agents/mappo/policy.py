@@ -105,7 +105,8 @@ class MappoPolicy(Policy):
         actor_file = next(model_dir.glob(f'actor*{version}.pt'))
         # actor_file = osp.join(model_dir, f'actor_eps70.pt')
         notice("Loading actor network from {}".format(actor_file))
-        self.actor.load_state_dict(torch.load(str(actor_file)))
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.actor.load_state_dict(torch.load(str(actor_file), map_location=device))
         try:
             critic_file = osp.join(model_dir, f'critic{version}.pt')
             self.critic.load_state_dict(torch.load(str(critic_file)))

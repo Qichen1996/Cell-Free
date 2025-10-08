@@ -21,7 +21,7 @@ class SimplePolicy:
             sm = info['sleep_mode']
             next_sm = info['next_sleep_mode']
             wakeup_time = info['wakeup_time']
-            # thrp_req_queue = info['queued_sum_rate_req']S
+            thrp_req_queue = info['queued_sum_rate_req']
             thrp_req_idle = info['idle_sum_rate_req']
             thrp_req = info['serving_sum_rate_req']
             thrp = info['serving_sum_rate']
@@ -32,7 +32,7 @@ class SimplePolicy:
                 self._sleep_steps[id] += 1
                 # if sm != next_sm:
                 #     pass
-                if thrp_req_idle:  # wakeup
+                if thrp_req_queue:  # wakeup
                     new_sm = 0
                     if wakeup_time < 5e-3:
                         conn_mode = 2

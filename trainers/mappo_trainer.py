@@ -207,7 +207,7 @@ class MappoTrainer(BaseTrainer):
         self.huber_delta = args.huber_delta
         self.recurrent_N = args.recurrent_N
         
-        cent_observation_space = self.envs.cent_observation_space[0] if \
+        cent_observation_space = self.envs.cent_observation_space if \
             self.use_centralized_V else self.envs.observation_space[0]
         
         self.policy = MappoPolicy(
