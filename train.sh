@@ -8,23 +8,23 @@ export EVAL=0
 
 scenario="B"
 accelerate=1200  # 1 step = 0.02 * 1200 = 24 s
-n_training_threads=24
+n_training_threads=4
 n_rollout_threads=42
-num_env_steps=$((25200 * 200))  # steps_per_episode * episodes
+num_env_steps=$((25200 * 300))  # steps_per_episode * episodes
 experiment="check"
 
 algo="mappo"
 gamma=0.99
 gain=0.01
-lr=5e-4
-critic_lr=$lr
+lr=6e-4
+critic_lr=5e-4
 value_loss_coef=1
 ppo_epoch=10
-num_mini_batch=32
+num_mini_batch=1
 
-w_qos=50  # 40
+w_qos=60  # 40
 w_xqos=0.005
-w_pc=0.5
+w_pc=0.6
 
 log_interval=1
 

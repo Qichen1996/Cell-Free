@@ -54,7 +54,7 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'fixed': 'Always-on', 'mappo_ant': 'MAPPO_Ant', 'mappo_sm': 'MAPPO_SM', 'mappo_w_qos=60.0_w_pc=0.4': 'MAPPO', 'simple1': 'Auto-SM1', 'dqn': 'DQN', 'simple': 'Auto-SM+'})
+        df = df.rename({'fixed': 'Always-on', 'mappo_ant': 'MAPPO_Ant', 'mappo_sm': 'MAPPO_SM', 'mappo_w_qos=40.0_w_pc=0.6': 'MAPPO', 'simple1': 'Auto-SM1', 'dqn': 'DQN', 'simple': 'Auto-SM+'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
     elif group == 'pc':

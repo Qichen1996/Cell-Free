@@ -48,17 +48,14 @@ class CloudPowerModel:
             Ccod_sum += 5.2 * W_r * SE_r * UE_cnt
             Cnet_sum += 8.0 * W_r * SE_r
 
-            p_fh_sum += config.Delta_tr_cloud * sum(bs.power_alloc.values()) \
-                        if bs.power_alloc else 0.0
-
         C_GPP = Cmod_sum
-        return C_GPP, p_fh_sum
+        return C_GPP
 
     # -------------------------------------------------------
     def step_power(self, dt):
         
     
-        C_GPP, P_fh = self._compute_gops()
+        C_GPP = self._compute_gops()
 
         # P_cloud  (8)
         P_proc = ( config.P_cloud_proc0 +
@@ -68,17 +65,10 @@ class CloudPowerModel:
                                               config.proc_slope_GPP +
                                               config.P_cloud_proc0 )
 
-        P_total = ( self.P_fixed + P_fh +
-                    (1/config.sigmaCool) *
-                    ( config.P_cloud_proc0 +
-                      config.proc_slope_GPP * C_GPP / config.C_GPP_max )
-                  )
+        P_total = self.P_fixed + (1/config.sigmaCool) * P_proc
 
         
-        self.P_tr   = P_fh
         self.P_proc = P_proc
-        self.P_tot  = P_total
-
         
         self.energy_J += P_total * dt
         self._time    += dt
@@ -87,7 +77,6 @@ class CloudPowerModel:
         if EVAL:
             self._stats_rec['time']       = self._time
             self._stats_rec['P_fixed']    += self.P_fixed * dt
-            self._stats_rec['P_tr']       += P_fh * dt
             self._stats_rec['P_proc']     += P_proc * dt
             self._stats_rec['energy_J']   = self.energy_J
 

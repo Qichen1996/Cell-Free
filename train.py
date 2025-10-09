@@ -122,7 +122,7 @@ def main(args):
             group=env_args.scenario,
             dir=str(run_dir),
             job_type="training",
-            id=f"{args.w_qos}_{args.w_pc}",
+            # id=f"w_{args.w_qos}_{args.w_pc}",
         )
     else:
         if not run_dir.exists():
