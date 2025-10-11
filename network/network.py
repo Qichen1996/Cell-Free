@@ -113,7 +113,6 @@ class MultiCellNetwork:
         self._energy_consumed = 0
         self._arrival_buf[self._buf_idx] = 0
         self._ue_stats[:] = 0
-        self.ue_no_bs = 0
         if EVAL:
             self._stats_updated = False
 

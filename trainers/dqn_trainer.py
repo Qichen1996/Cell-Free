@@ -152,7 +152,7 @@ class DQNTrainer(BaseTrainer):
                         for info in infos
                         for step in info["step_rewards"]
                     ])
-                    print(f"dp: {avg_drop_ratio*100:.4f}%, pc: {avg_pc:.4f}, rwd: {avg_rwd:.4f}")
+                    # print(f"dp: {avg_drop_ratio*100:.4f}%, pc: {avg_pc:.4f}, rwd: {avg_rwd:.4f}")
                     for self.targ_net_param, self.net_param in zip(self.targ_net.parameters(), self.q_net.parameters()):
                         self.targ_net_param.data.copy_(
                             args.tau * self.net_param.data + (1.0 - args.tau) * self.targ_net_param.data

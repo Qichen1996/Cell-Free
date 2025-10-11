@@ -54,7 +54,7 @@ columns = ['actual_rate',
 
 def refactor(df):
     if group == 'baselines':
-        df = df.rename({'fixed': 'Always-on', 'mappo_ant': 'MAPPO_Ant', 'mappo_sm': 'MAPPO_SM', 'mappo_w_qos=40.0_w_pc=0.6': 'MAPPO', 'simple1': 'Auto-SM1', 'dqn': 'DQN', 'simple': 'Auto-SM+'})
+        df = df.rename({'fixed': 'Always-on', 'mappo_w_qos=60.0_w_pc=0.4': 'MAPPO', 'simple1': 'Auto-SM1', 'dqn_w_qos=20.0_w_pc=1.0': 'DQN', 'simple': 'Auto-SM+'})
     elif group == 'baselines-no-offload':
         df = df.rename({'mappo_no_offload=True': 'MAPPO', 'fixed_no_offload=True': 'Always-on', 'simple1_no_offload=True': 'Auto-SM1', 'dqn_no_offload=True': 'DQN'})
     elif group == 'pc':
@@ -137,7 +137,7 @@ name_maps = {
     'signal_power': 'signal power',
     'interference': 'interference',
     'actual_rate': 'data rate (Mb/s)',
-    'arrival_rate': 'arrival rate (Mb/s)',
+    'arrival_rate': 'Demand rate (Mb/s)',
     'sum_tx_power': 'total transmit power (W)',
     'avg_antennas': 'Average active antennas per AP',
     'sm0_cnt': 'active BSs', 'sm1_cnt': 'BSs in SM1',
@@ -195,14 +195,19 @@ for scenario in vars_df.index.levels[1]:
         f.write_image(f'sim_plots/{group}_{g}_{scenario}_SM_daily.pdf', scale=2)
 
     # from plotly.subplots import make_subplots
+    # import plotly.express as px
     # import plotly.graph_objects as go
+    # import numpy as np
+    
     # fig = make_subplots(
-    #     rows=1, cols=len(_df.index.levels[0]), shared_yaxes=True,
+    #     rows=1,
+    #     cols=len(_df.index.levels[0]),
+    #     shared_yaxes=True,
     #     subplot_titles=[f"{g}" for g in _df.index.levels[0]],
-    #     column_widths=[0.5, 0.5],
-    #     horizontal_spacing=0.03
+    #     horizontal_spacing=0.02,          # 控制两图之间的间距
+    #     column_widths=[0.5, 0.5]        # 🔹让每张图都更宽（原默认是 0.5）
     # )
-
+    
     # for anno in fig['layout']['annotations']:
     #     anno['font'] = dict(size=20)
     
@@ -210,43 +215,47 @@ for scenario in vars_df.index.levels[1]:
     
     # for i, g in enumerate(_df.index.levels[0], start=1):
     #     df_g = _df.loc[g].reset_index()
-        
-    #     # 这里确保 y 轴包含所有模式
     #     f = px.area(
     #         df_g,
-    #         x="time", 
-    #         y=["Active", "SM1", "SM2", "SM3"],   # 🔹 强制指定四个列
+    #         x="time",
+    #         y=["Active", "SM1", "SM2", "SM3"],
     #         labels={'value': 'Number of APs', 'variable': 'Sleep mode', 'time': 'Time'},
     #         color_discrete_sequence=colors
     #     )
-        
+    
     #     for trace in f.data:
-    #         if i > 1:   # 右边 subplot 去掉 legend
+    #         if i > 1:
     #             trace.showlegend = False
     #         fig.add_trace(trace, row=1, col=i)
     
-    # # 设置布局
+    # # 🔹 调整整体布局
     # fig.update_layout(
-    #     width=900, height=400,
+    #     width=1800, height=600,    # 更宽更高
+    #     margin=dict(l=60, r=30, t=80, b=120),  # 给底部更多空间放刻度
     #     showlegend=True,
     #     legend=dict(
     #         orientation="h",
-    #         yanchor="bottom", y=-0.29,
-    #         xanchor="center", x=0.5, 
-    #         itemsizing="constant",
+    #         yanchor="bottom",
+    #         y=-0.22,    # legend 稍微上移
+    #         xanchor="center",
+    #         x=0.5,
     #         itemwidth=50,
-    #         entrywidth=90,         # 每个 legend 占的宽度
-    #         # entrywidthmode="pixels" # 用像素为单位
+    #         itemsizing="constant",
+    #         font=dict(size=14)
     #     ),
-    #     yaxis=dict(
-    #         title="Number of APs",
-    #         title_standoff=3 
-    #     )
     # )
     
-    # fig.update_xaxes(dtick=2, tickangle=45)
+    # fig.update_yaxes(
+    #     title_text="Number of APs", 
+    #     title_standoff=5,
+    #     row=1, col=1  # 只应用于第一个子图
+    # )
+    # for i in range(2, len(_df.index.levels[0]) + 1):
+    #     fig.update_yaxes(title_text="", row=1, col=i)
+    # fig.update_xaxes(dtick=2, tickangle=45, tickfont=dict(size=12))
     
-    # fig.write_image(f'sim_plots/{group}_{scenario}_SM_daily_combined.pdf', scale=2)
+    # fig.write_image(f'sim_plots/{group}_{scenario}_SM_daily_combined.pdf', scale=3)
+
     # sys.exit()
 
     re_pat = re.compile(r'antennas \((BS \d+)\)')
@@ -290,31 +299,43 @@ for scenario in vars_df.index.levels[1]:
         _df.index = pd.MultiIndex.from_tuples(
             [tuple(s.split()) for s in _df.index],
             names=['day', 'time'])
-        if key == "Average active antennas per AP":
-            _df.to_csv('filename.csv', index=True)
+        # if key == "Average active antennas per AP":
+        #     _df.to_csv('filename.csv', index=True)
         _df1 = _df.reset_index(level=1).groupby('time').mean()
-        if key == "Average active antennas per AP":
-            _df1.to_csv('filename1.csv', index=True)
-            _df1 = _df1.reset_index()   # 如果 time 在 index 中，会被还原成列
-            _df1["Auto-SM1"] = _df1["Auto-SM1"].astype(int)
-            df_melt = _df1.melt(id_vars=["time"], var_name="policy", value_name="Value")
-            # 画图
-            fig1 = px.line(df_melt, x="time", y="Value", color="policy", labels={"Value": "Average active antennas per AP", "time": "Time"})
+        # if key == "Average active antennas per AP":
+        #     # _df1.to_csv('filename1.csv', index=True)
+        #     # _df1 = _df1.reset_index()   # 如果 time 在 index 中，会被还原成列
+        #     # _df1["Auto-SM1"] = _df1["Auto-SM1"].astype(int)
+        #     # df_melt = _df1.melt(id_vars=["time"], var_name="policy", value_name="Value")
+        #     # # 画图
+        #     # fig1 = px.line(df_melt, x="time", y="Value", color="policy", labels={"Value": "Average active antennas per AP", "time": "Time"})
             
-            # 设置不同 Policy 的线型
-            fig1.for_each_trace(
-                lambda t: t.update(line_shape="hv") if t.name == "Auto-SM1" else t.update(line_shape="linear")
-            )
-            fig1.update_xaxes(dtick=1)
-            fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
-        else:
-            fig.update_yaxes(exponentformat='power')  # range=[ymin, ymax]
-            key = key.replace('/', 'p')
-            fig.update_xaxes(dtick=2)
-            # fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
-            fig1 = px.line(_df1, labels={'value': key, 'time': 'Time'})
-            fig1.update_xaxes(dtick=2)
-            fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
+        #     # # 设置不同 Policy 的线型
+        #     # fig1.for_each_trace(
+        #     #     lambda t: t.update(line_shape="hv") if t.name == "Auto-SM1" else t.update(line_shape="linear")
+        #     # )
+        #     fig1.update_xaxes(dtick=1)
+        #     fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
+        # else:
+        fig.update_yaxes(exponentformat='power')  # range=[ymin, ymax]
+        key = key.replace('/', 'p')
+        fig.update_xaxes(dtick=2)
+        # fig.write_image(f'sim_plots/{group}_{scenario}_{key}.pdf', scale=2)
+        fig1 = px.line(_df1, labels={'value': key, 'time': 'Time'})
+        fig1.update_layout(
+            font=dict(
+                family="Arial",   # 字体可换成 "Times New Roman"
+                size=22           # 🔹全局字体大小（推荐 20–24）
+            ),
+            title_font=dict(size=24),
+            legend=dict(
+                font=dict(size=20),  # 图例字体
+            ),
+            xaxis=dict(title_font=dict(size=22), tickfont=dict(size=18)),
+            yaxis=dict(title_font=dict(size=22), tickfont=dict(size=18)),
+        )
+        fig1.update_xaxes(dtick=2, tickangle=45)
+        fig1.write_image(f'sim_plots/{group}_{scenario}_{key}_daily.pdf', scale=2)
         
     # rate_df = _sdf[['Data Rate (Mb/s)', 'Arrival Rate (Mb/s)']]
     # arr_rates = rate_df['Arrival Rate (Mb/s)'].unstack().values

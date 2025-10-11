@@ -77,10 +77,8 @@ def get_model_dir(args, env_args, run_dir, version=''):
     p = 'wandb/run-*%s/files/' if args.use_wandb else '%s/models/'
     dirs = run_dir.glob(p % version)
     for d in sorted(dirs, key=os.path.getmtime, reverse=True):
-    # d = sorted(dirs, key=os.path.getmtime, reverse=True)[0]
+    # d = sorted(dirs, key=os.path.getmtime, reverse=True)[1]
         print(d)
-        # if env_args.no_interf ^ ('no_interf' in str(d)):
-        #     continue
         config_path = d/'config.yaml'
         if not config_path.exists():
             warn("no config file in %s" % d)

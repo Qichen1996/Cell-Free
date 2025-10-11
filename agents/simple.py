@@ -46,12 +46,12 @@ class SimplePolicy:
                 self._sleep_steps[id] = 0
                 if thrp_req == 0:
                     new_sm = 1
-                elif thrp / thrp_req > 70:   # 75 45
+                elif thrp / thrp_req > 55:   # 75 45
                     # self._ant_steps[id] += 1
                     # if self._ant_steps[id] >= 180:
                     ant_switch = -1
                         # self._ant_steps[id] = 0
-                elif thrp / thrp_req < 40:
+                elif thrp / thrp_req < 45:
                     ant_switch = 1
             return [ant_switch + 1, new_sm]
         return list(map(single_act, range(self.num_agents), obs))
