@@ -273,10 +273,10 @@ class UserEquipment:
         self.disconnect()
         if self.demand > 0.:
             for b in self._cover_bss:
-                b._ue_stats[0] += [1, self.delay / self.delay_budget]
+                b._ue_stats[1] += [1, self.demand / self.total_demand]
         else:
             for b in self._cover_bss:
-                b._ue_stats[1] += [1, self.demand / self.total_demand]
+                b._ue_stats[0] += [1, self.delay / self.delay_budget]
         for b in list(self._cover_bss):
             b.remove_from_cell(self)
             self._cover_bss.remove(b)
